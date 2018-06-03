@@ -104,7 +104,6 @@ class MainWindow : public QMainWindow
         void onHudClosed();
         void onTypingPaused();
         void onTypingResumed();
-        void onQuickRefGuideLinkClicked(const QUrl& url);
         void showAbout();
         void updateWordCount(int newWordCount);
         void changeFocusMode(FocusMode focusMode);
@@ -143,7 +142,7 @@ class MainWindow : public QMainWindow
         QPushButton* hideOpenHudsButton;
         FindDialog* findReplaceDialog;
         HtmlPreview* htmlPreview;
-        QWebView* quickReferenceGuideViewer;
+        QWebEngineView* quickReferenceGuideViewer;
         QAction* htmlPreviewMenuAction;
         QAction* fullScreenMenuAction;
         QPushButton* fullScreenButton;
