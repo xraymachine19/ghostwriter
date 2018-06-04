@@ -19,6 +19,7 @@
 
 #include <QApplication>
 #include <QCoreApplication>
+#include <QtWebEngine/qtwebengineglobal.h>
 #include <QTranslator>
 #include <QLocale>
 
@@ -33,6 +34,7 @@ int main(int argc, char* argv[])
 #endif
 
     QApplication app(argc, argv);
+    QtWebEngine::initialize();
 
     // Call this to force settings initialization before the application
     // fully launches.
