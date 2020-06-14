@@ -20,23 +20,24 @@
 #ifndef MAIN_WINDOW_H
 #define MAIN_WINDOW_H
 
-#include <QObject>
-#include <QMainWindow>
-#include <QWidget>
-#include <QMenu>
 #include <QAction>
-#include <QLabel>
 #include <QGraphicsColorizeEffect>
 #include <QGraphicsDropShadowEffect>
+#include <QLabel>
+#include <QMainWindow>
+#include <QMenu>
+#include <QObject>
+#include <QTabWidget>
+#include <QWidget>
 
-#include "MarkdownEditor.h"
-#include "HtmlPreview.h"
-#include "ThemeFactory.h"
-#include "HtmlPreview.h"
 #include "AppSettings.h"
-#include "TimeLabel.h"
 #include "find_dialog.h"
+#include "HtmlPreview.h"
+#include "HtmlPreview.h"
+#include "MarkdownEditor.h"
 #include "spelling/dictionary_manager.h"
+#include "ThemeFactory.h"
+#include "TimeLabel.h"
 
 #define MAX_RECENT_FILES 10
 
@@ -67,10 +68,8 @@ class MainWindow : public QMainWindow
     protected:
         QSize sizeHint() const;
         void resizeEvent(QResizeEvent* event);
-        void moveEvent(QMoveEvent* event);
         void keyPressEvent(QKeyEvent* e);
         bool eventFilter(QObject* obj, QEvent* event);
-        void paintEvent(QPaintEvent* event);
         void closeEvent(QCloseEvent* event);
 
     private slots:
@@ -130,6 +129,7 @@ class MainWindow : public QMainWindow
         ThemeFactory* themeFactory;
         Theme theme;
         QString language;
+        QTabWidget* sidebar;
         QLabel* wordCountLabel;
         QLabel* statusLabel;
         TimeLabel* timeLabel;
@@ -146,7 +146,6 @@ class MainWindow : public QMainWindow
         QAction* htmlPreviewMenuAction;
         QAction* fullScreenMenuAction;
         QPushButton* fullScreenButton;
-        QGraphicsColorizeEffect* fullScreenButtonColorEffect;
         HudWindow* outlineHud;
         Outline* outlineWidget;
         HudWindow* cheatSheetHud;
@@ -163,9 +162,6 @@ class MainWindow : public QMainWindow
         SessionStatistics* sessionStats;
         SessionStatisticsWidget* sessionStatsWidget;
         QListWidget* cheatSheetWidget;
-        QPixmap originalBackgroundImage;
-        QPixmap adjustedBackgroundImage;
-        QFileSystemWatcher* fileWatcher;
         QAction* recentFilesActions[MAX_RECENT_FILES];
         int menuBarHeight;
         QPoint lastMousePos;
@@ -173,9 +169,6 @@ class MainWindow : public QMainWindow
 
         QList<QWidget*> statusBarButtons;
         QList<QWidget*> statusBarWidgets;
-
-        Exporter* exporter;
-        QThread* exporterThread;
 
         AppSettings* appSettings;
 
@@ -202,9 +195,7 @@ class MainWindow : public QMainWindow
 
         void showHud(HudWindow* hud);
         void adjustEditorWidth(int width);
-        void applyStatusBarStyle();
         void applyTheme();
-        void predrawBackgroundImage();
         void showMenuBar();
         void hideMenuBar();
         bool isMenuBarVisible() const;

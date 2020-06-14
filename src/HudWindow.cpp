@@ -37,7 +37,7 @@
 #include <QApplication>
 
 #include "HudWindow.h"
-#include "ColorHelper.h"
+#include "Color.h"
 
 QT_BEGIN_NAMESPACE
 extern void qt_blurImage

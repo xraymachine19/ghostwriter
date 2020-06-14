@@ -1,6 +1,6 @@
 /***********************************************************************
  *
- * Copyright (C) 2014-2018 wereturtle
+ * Copyright (C) 2014-2020 wereturtle
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -87,11 +87,11 @@ class ThemeFactory
          * Gets the theme storage location directory.
          */
         QDir getThemeDirectory() const;
-
+        
         /**
-         * Gets the directory path for storing the theme with the given name.
+         * Gets the file path for storing/deleting the theme with the given name.
          */
-        QDir getDirectoryForTheme(const QString& name) const;
+        QString getThemeFilePath(const QString& themeName) const;
 
         /**
          * Returns an untitled theme name that is unique.
@@ -117,31 +117,6 @@ class ThemeFactory
         void loadPlainstractionLightTheme();
         void loadPlainstractionDarkTheme();
 
-        bool extractColorSetting
-        (
-            const QSettings& settings,
-            const QString& key,
-            QColor& value,
-            QString& err
-        ) const;
-
-        bool extractIntSetting
-        (
-            const QSettings& settings,
-            const QString& key,
-            int& value,
-            int min,
-            int max,
-            QString& err
-        ) const;
-
-        bool extractStringSetting
-        (
-            const QSettings& settings,
-            const QString& key,
-            QString& value,
-            QString& err
-        ) const;
 };
 
 #endif

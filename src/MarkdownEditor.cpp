@@ -41,7 +41,7 @@
 #include <QUrl>
 
 #include "CmarkGfmAPI.h"
-#include "ColorHelper.h"
+#include "Color.h"
 #include "MarkdownEditor.h"
 #include "MarkdownHighlighter.h"
 #include "MarkdownStates.h"
@@ -166,15 +166,15 @@ MarkdownEditor::MarkdownEditor
 
     setColorScheme
     (
-        QColor(Qt::black),
-        QColor(Qt::white),
-        QColor(Qt::black),
-        QColor(Qt::blue),
-        QColor(Qt::black),
-        QColor(Qt::black),
-        QColor(Qt::black),
-        QColor(Qt::black),
-        QColor(Qt::red)
+        Qt::black,
+        Qt::white,
+        Qt::black,
+        Qt::blue,
+        Qt::black,
+        Qt::black,
+        Qt::black,
+        Qt::black,
+        Qt::red
     );
 
     textCursorVisible = true;
@@ -412,15 +412,15 @@ void MarkdownEditor::setFocusMode(FocusMode mode)
 
 void MarkdownEditor::setColorScheme
 (
-    const QColor& defaultTextColor,
-    const QColor& backgroundColor,
-    const QColor& markupColor,
-    const QColor& linkColor,
-    const QColor& headingColor,
-    const QColor& emphasisColor,
-    const QColor& blockquoteColor,
-    const QColor& codeColor,
-    const QColor& spellingErrorColor
+    const Color& defaultTextColor,
+    const Color& backgroundColor,
+    const Color& markupColor,
+    const Color& linkColor,
+    const Color& headingColor,
+    const Color& emphasisColor,
+    const Color& blockquoteColor,
+    const Color& codeColor,
+    const Color& spellingErrorColor
 )
 {
     highlighter->setColorScheme
@@ -446,7 +446,7 @@ void MarkdownEditor::setColorScheme
     {
         blockAlpha = 18;
     }
-    else if (ColorHelper::getLuminance(blockColor) < 0.5)
+    else if (blockColor.getLuminance() < 0.5)
     {
         blockAlpha = 10;
     }
@@ -458,11 +458,6 @@ void MarkdownEditor::setColorScheme
 
     fadeColor = QBrush(fadedForegroundColor);
     focusText();
-}
-
-void MarkdownEditor::setAspect(EditorAspect aspect)
-{
-    this->aspect = aspect;
 }
 
 void MarkdownEditor::setFont(const QString& family, double pointSize)
@@ -523,16 +518,8 @@ void MarkdownEditor::setupPaperMargins(int width)
         margin = (width - proposedEditorWidth) / 2;
     }
 
-    if (EditorAspectStretch == aspect)
-    {
-        preferredLayout->setContentsMargins(0, 0, 0, 0);
-        setViewportMargins(margin, 20, margin, 0);
-    }
-    else
-    {
-        preferredLayout->setContentsMargins(margin, 20, margin, 20);
-        setViewportMargins(10, 10, 10, 10);
-    }
+    preferredLayout->setContentsMargins(0, 0, 0, 0);
+    setViewportMargins(margin, 20, margin, 0);
 }
 
 void MarkdownEditor::dragEnterEvent(QDragEnterEvent* e)

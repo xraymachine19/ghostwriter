@@ -1,6 +1,6 @@
 /***********************************************************************
  *
- * Copyright (C) 2014-2017 wereturtle
+ * Copyright (C) 2014-2020 wereturtle
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,6 +28,7 @@
 #include <QDialogButtonBox>
 #include <QPushButton>
 
+#include "Color.h"
 #include "ThemeEditorDialog.h"
 #include "Theme.h"
 #include "ThemeFactory.h"
@@ -38,12 +39,6 @@
 ThemeEditorDialog::ThemeEditorDialog(const Theme& theme, QWidget* parent)
     : QDialog(parent), theme(theme)
 {
-    qreal dpr = 1.0;
-
-#if QT_VERSION >= 0x050600
-    dpr = devicePixelRatioF();
-#endif
-
     this->setWindowTitle(tr("Edit Theme"));
     oldThemeName = theme.getName();
     themeNameEdit = new QLineEdit(this);
@@ -70,64 +65,6 @@ ThemeEditorDialog::ThemeEditorDialog(const Theme& theme, QWidget* parent)
     backgroundColorButton = new ColorButton(this);
     backgroundColorButton->setColor(theme.getBackgroundColor());
 
-    editorBackgroundColorButton = new ColorButton(this);
-    QColor editorBgColorNoAlpha = theme.getEditorBackgroundColor();
-    editorBgColorNoAlpha.setAlpha(255);
-    editorBackgroundColorButton->setColor(editorBgColorNoAlpha);
-
-    hudForegroundColorButton = new ColorButton(this);
-    hudForegroundColorButton->setColor(theme.getHudForegroundColor());
-    hudBackgroundColorButton = new ColorButton(this);
-    hudBackgroundColorButton->setColor(theme.getHudBackgroundColor());
-
-    backgroundImageButton = new ImageButton(dpr, this);
-
-    if
-    (
-        (PictureAspectNone != theme.getBackgroundImageAspect())
-        && !theme.getBackgroundImageUrl().isNull()
-        && !theme.getBackgroundImageUrl().isEmpty()
-    )
-    {
-        QFileInfo bgImgInfo(theme.getBackgroundImageUrl());
-        QDir bgImgParentDir = bgImgInfo.dir();
-        bgImgParentDir.cdUp();
-
-        if
-        (
-            (bgImgInfo.dir() == ThemeFactory::getInstance()->getDirectoryForTheme(theme.getName()))
-            || (ThemeFactory::getInstance()->getThemeDirectory() == bgImgParentDir)
-        )
-        {
-            backgroundImageButton->setImage(theme.getBackgroundImageUrl(), QString());
-        }
-        else
-        {
-            backgroundImageButton->setImage(theme.getBackgroundImageUrl(), theme.getBackgroundImageUrl());
-        }
-    }
-
-    editorAspectComboBox = new QComboBox(this);
-    editorAspectComboBox->addItem(tr("Stretch"), QVariant(EditorAspectStretch));
-    editorAspectComboBox->addItem(tr("Center"), QVariant(EditorAspectCenter));
-    editorAspectComboBox->setCurrentIndex((int) theme.getEditorAspect());
-
-    pictureAspectComboBox = new QComboBox(this);
-    pictureAspectComboBox->addItem(tr("None"), QVariant(PictureAspectNone));
-    pictureAspectComboBox->addItem(tr("Tile"), QVariant(PictureAspectTile));
-    pictureAspectComboBox->addItem(tr("Center"), QVariant(PictureAspectCenter));
-    pictureAspectComboBox->addItem(tr("Stretch"), QVariant(PictureAspectStretch));
-    pictureAspectComboBox->addItem(tr("Scale"), QVariant(PictureAspectScale));
-    pictureAspectComboBox->addItem(tr("Zoom"), QVariant(PictureAspectZoom));
-    pictureAspectComboBox->setCurrentIndex((int) theme.getBackgroundImageAspect());
-
-    editorOpacitySlider = new QSlider(Qt::Horizontal, this);
-    editorOpacitySlider->setMinimum(0);
-    editorOpacitySlider->setMaximum(255);
-    editorOpacitySlider->setValue(theme.getEditorBackgroundColor().alpha());
-
-    QTabWidget* tabWidget = new QTabWidget(this);
-
     QFormLayout* nameLayout = new QFormLayout();
     nameLayout->addRow(tr("Theme Name"), themeNameEdit);
 
@@ -136,7 +73,6 @@ ThemeEditorDialog::ThemeEditorDialog(const Theme& theme, QWidget* parent)
 
     QVBoxLayout* layout = new QVBoxLayout();
     layout->addWidget(nameSettingsWidget);
-    layout->addWidget(tabWidget);
     this->setLayout(layout);
 
     QFormLayout* editorColorsLayout = new QFormLayout();
@@ -148,34 +84,9 @@ ThemeEditorDialog::ThemeEditorDialog(const Theme& theme, QWidget* parent)
     editorColorsLayout->addRow(tr("Emphasis Color"), emphasisColorButton);
     editorColorsLayout->addRow(tr("Block Text Color"), blockTextColorButton);
     editorColorsLayout->addRow(tr("Spelling Error Color"), spellcheckColorButton);
-    editorColorsLayout->addRow(tr("Text Area Background Color"), editorBackgroundColorButton);
+    editorColorsLayout->addRow(tr("Text Area Background Color"), backgroundColorButton);
 
-    QWidget* tab = new QWidget();
-    tabWidget->addTab(tab, tr("Text Editor"));
-    tab->setLayout(editorColorsLayout);
-
-    QFormLayout* backgroundSettingsLayout = new QFormLayout();
-    backgroundSettingsLayout->setFieldGrowthPolicy(QFormLayout::FieldsStayAtSizeHint);
-
-    backgroundSettingsLayout->addRow(tr("Background Image"), pictureAspectComboBox);
-    backgroundSettingsLayout->addRow(tr("Background Color"), backgroundColorButton);
-    backgroundSettingsLayout->addWidget(backgroundImageButton);
-    backgroundSettingsLayout->addRow(tr("Editor Aspect"), editorAspectComboBox);
-    backgroundSettingsLayout->addRow(tr("Editor Opacity"), editorOpacitySlider);
-
-    tab = new QWidget();
-    tabWidget->addTab(tab, tr("Background"));
-    tab->setLayout(backgroundSettingsLayout);
-
-    QFormLayout* hudSettingsLayout = new QFormLayout();
-    hudSettingsLayout->setFieldGrowthPolicy(QFormLayout::FieldsStayAtSizeHint);
-
-    hudSettingsLayout->addRow(tr("HUD Foreground Color"), hudForegroundColorButton);
-    hudSettingsLayout->addRow(tr("HUD Background Color"), hudBackgroundColorButton);
-
-    tab = new QWidget();
-    tabWidget->addTab(tab, tr("HUD"));
-    tab->setLayout(hudSettingsLayout);
+    layout->addLayout(editorColorsLayout);
 
     QDialogButtonBox* buttonBox = new QDialogButtonBox(Qt::Horizontal, this);
     buttonBox->addButton(QDialogButtonBox::Ok);
@@ -228,24 +139,6 @@ bool ThemeEditorDialog::saveTheme()
     theme.setCodeColor(blockTextColorButton->color());
     theme.setSpellingErrorColor(spellcheckColorButton->color());
     theme.setBackgroundColor(backgroundColorButton->color());
-    theme.setBackgroundImageAspect((PictureAspect) pictureAspectComboBox->currentIndex());
-
-    QColor editorBgColor = editorBackgroundColorButton->color();
-    editorBgColor.setAlpha(editorOpacitySlider->value());
-    theme.setEditorBackgroundColor(editorBgColor);
-    theme.setEditorAspect((EditorAspect) editorAspectComboBox->currentIndex());
-
-    if (PictureAspectNone == theme.getBackgroundImageAspect())
-    {
-        theme.setBackgroundImageUrl("NA");
-    }
-    else
-    {
-        theme.setBackgroundImageUrl(backgroundImageButton->image());
-    }
-
-    theme.setHudForegroundColor(hudForegroundColorButton->color());
-    theme.setHudBackgroundColor(hudBackgroundColorButton->color());
 
     QString error;
 
@@ -259,26 +152,8 @@ bool ThemeEditorDialog::saveTheme()
             tr("Unable to save theme."),
             error
         );
+        theme.setName(oldThemeName);
         return false;
-    }
-
-    // If the theme was renamed, delete the old theme file and its
-    // background image (if any).
-    //
-    if (oldThemeName != theme.getName())
-    {
-        ThemeFactory::getInstance()->deleteTheme(oldThemeName, error);
-
-        if (!error.isNull())
-        {
-            MessageBoxHelper::critical
-            (
-                this,
-                tr("Failed to rename theme."),
-                error
-            );
-            return false;
-        }
     }
 
     emit themeUpdated(theme);

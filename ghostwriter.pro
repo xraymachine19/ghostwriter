@@ -104,7 +104,7 @@ HEADERS += \
     src/AppSettings.h \
     src/CmarkGfmAPI.h \
     src/CmarkGfmExporter.h \
-    src/ColorHelper.h \
+    src/Color.h \
     src/CommandLineExporter.h \
     src/DocumentHistory.h \
     src/DocumentManager.h \
@@ -137,6 +137,7 @@ HEADERS += \
     src/SessionStatisticsWidget.h \
     src/SimpleFontDialog.h \
     src/StringObserver.h \
+    src/StyleSheetBuilder.h \
     src/StyleSheetManagerDialog.h \
     src/TextBlockData.h \
     src/Theme.h \
@@ -191,7 +192,7 @@ SOURCES += \
     src/AppSettings.cpp \
     src/CmarkGfmAPI.cpp \
     src/CmarkGfmExporter.cpp \
-    src/ColorHelper.cpp \
+    src/Color.cpp \
     src/CommandLineExporter.cpp \
     src/DocumentHistory.cpp \
     src/DocumentManager.cpp \
@@ -220,6 +221,7 @@ SOURCES += \
     src/SessionStatisticsWidget.cpp \
     src/SimpleFontDialog.cpp \
     src/StringObserver.cpp \
+    src/StyleSheetBuilder.cpp \
     src/StyleSheetManagerDialog.cpp \
     src/Theme.cpp \
     src/ThemeEditorDialog.cpp \

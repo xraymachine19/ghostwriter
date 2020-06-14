@@ -20,23 +20,24 @@
 #ifndef MARKDOWN_EDITOR_H
 #define MARKDOWN_EDITOR_H
 
+#include <QGridLayout>
+#include <QLayout>
+#include <QListWidget>
 #include <QObject>
 #include <QPlainTextEdit>
-#include <QString>
+#include <QRegularExpression>
 #include <QResizeEvent>
 #include <QSize>
-#include <QLayout>
-#include <QGridLayout>
+#include <QString>
 #include <QTextCursor>
-#include <QListWidget>
-#include <QRegularExpression>
 
+#include "Color.h"
+#include "MarkdownDocument.h"
 #include "MarkdownEditorTypes.h"
 #include "MarkdownStyles.h"
-#include "MarkdownDocument.h"
-#include "Theme.h"
-#include "spelling/dictionary_ref.h"
 #include "spelling/dictionary_manager.h"
+#include "spelling/dictionary_ref.h"
+#include "Theme.h"
 
 class MarkdownHighlighter;
 
@@ -113,21 +114,16 @@ class MarkdownEditor : public QPlainTextEdit
          */
         void setColorScheme
         (
-            const QColor& defaultTextColor,
-            const QColor& backgroundColor,
-            const QColor& markupColor,
-            const QColor& linkColor,
-            const QColor& headingColor,
-            const QColor& emphasisColor,
-            const QColor& blockquoteColor,
-            const QColor& codeColor,
-            const QColor& spellingErrorColor
+            const Color& defaultTextColor,
+            const Color& backgroundColor,
+            const Color& markupColor,
+            const Color& linkColor,
+            const Color& headingColor,
+            const Color& emphasisColor,
+            const Color& blockquoteColor,
+            const Color& codeColor,
+            const Color& spellingErrorColor
         );
-
-        /**
-         * Sets the editor aspect.
-         */
-        Q_SLOT void setAspect(EditorAspect aspect);
 
         /**
          * Sets the font.
@@ -151,7 +147,7 @@ class MarkdownEditor : public QPlainTextEdit
          * cause crashes with calls to setViewportMargins().
          *
          * The parent window should also call this method after
-         * calls to setEditorWidth() and setAspect().
+         * calls to setEditorWidth().
          */
         void setupPaperMargins(int width);
 
@@ -430,8 +426,7 @@ class MarkdownEditor : public QPlainTextEdit
         bool hemingwayModeEnabled;
         FocusMode focusMode;
         QBrush fadeColor;
-        QColor blockColor;
-        EditorAspect aspect;
+        Color blockColor;
         bool insertSpacesForTabs;
         int tabWidth;
         EditorWidth editorWidth;

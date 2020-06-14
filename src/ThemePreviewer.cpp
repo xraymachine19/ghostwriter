@@ -48,82 +48,20 @@ void ThemePreviewer::renderPreview(const Theme& newSettings)
 
     QPixmap thumbnailPixmap(this->width, this->height);
     QPainter painter(&thumbnailPixmap);
+    painter.setRenderHint(QPainter::Antialiasing);
 
-    // First, paint the background image, if any.
-    if (PictureAspectNone != theme.getBackgroundImageAspect())
-    {
-        QImage destImg;
+    // First, draw the editor "background".
+    painter.fillRect
+    (
+        thumbnailPixmap.rect(),
+        theme.getBackgroundColor()
+    );
 
-        // Load the background image from the file, if available, and zoom.
-        if
-        (
-            !theme.getBackgroundImageUrl().isNull() &&
-            !theme.getBackgroundImageUrl().isEmpty())
-        {
-            QImage srcImg(theme.getBackgroundImageUrl());
-            destImg = srcImg.scaled
-                (
-                    thumbnailPixmap.size(),
-                    Qt::KeepAspectRatioByExpanding,
-                    Qt::SmoothTransformation
-                );
-        }
-
-        // Draw the image.
-        painter.fillRect
-        (
-            thumbnailPixmap.rect(),
-            QBrush(theme.getBackgroundColor())
-        );
-
-        if (!destImg.isNull())
-        {
-            painter.drawImage
-            (
-                (thumbnailPixmap.width() - destImg.width()) / 2,
-                (thumbnailPixmap.height() - destImg.height()) / 2,
-                destImg
-            );
-        }
-    }
-    // If there's no background image, then just fill the background color.
-    else
-    {
-        QColor bgColor = theme.getBackgroundColor();
-
-        if (EditorAspectStretch == theme.getEditorAspect())
-        {
-            bgColor = theme.getEditorBackgroundColor();
-        }
-
-        painter.fillRect
-        (
-            thumbnailPixmap.rect(),
-            bgColor.rgb()
-        );
-    }
-
-    // Next, draw the "editor" background.
-
+    // Now draw a circle in the background for each of the text colors.
     int w = 2 * width / 3;
     int h = height / 4;
     int x = (width / 3) - 3;
     int y = ((3 * height) / 4) - 3;
-
-    painter.setRenderHint(QPainter::Antialiasing);
-    painter.setPen(Qt::NoPen);
-    painter.setBrush(QBrush(theme.getEditorBackgroundColor()));
-
-    if (EditorAspectCenter == theme.getEditorAspect())
-    {
-        painter.drawRect(x, y, w, h);
-    }
-    else
-    {
-        painter.drawRect(0, 0, width, height);
-    }
-
-    // Now draw a circle in the "editor" background for each of the text colors.
     int radius = (h / 4);
     int xoffset = w / 3;
     int cx1 = x + (xoffset / 2);
@@ -131,6 +69,7 @@ void ThemePreviewer::renderPreview(const Theme& newSettings)
     int cx3 = cx2 + xoffset;
     int cy = y + (h / 2);
 
+    painter.setPen(Qt::NoPen);
     painter.setBrush(QBrush(theme.getDefaultTextColor()));
     painter.drawEllipse(QPoint(cx1, cy), radius, radius);
     painter.setBrush(QBrush(theme.getMarkupColor()));

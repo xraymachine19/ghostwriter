@@ -1,6 +1,6 @@
 /***********************************************************************
  *
- * Copyright (C) 2015-2018 wereturtle
+ * Copyright (C) 2015-2020 wereturtle
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,9 +17,21 @@
  *
  ***********************************************************************/
 
-#include <QDebug>
-
 #include "Theme.h"
+
+const QStringList Theme::keyArray
+(
+    QStringList()
+        << "foreground"
+        << "background"
+        << "markup"
+        << "link"
+        << "heading"
+        << "emphasis"
+        << "blockquote"
+        << "code"
+        << "spelling"
+);
 
 Theme::Theme()
     : builtInFlag(false)
@@ -27,15 +39,34 @@ Theme::Theme()
 
 }
 
+Theme::Theme(const Theme& other) 
+{
+    this->name = other.name;
+    this->builtInFlag = other.builtInFlag;
+    this->colors = other.colors;
+}
+
 Theme::Theme(const QString& name, bool builtIn)
     : name(name), builtInFlag(builtIn)
 {
-
+    ;
 }
 
 Theme::~Theme()
 {
+    ;
+}
 
+Theme& Theme::operator=(const Theme& other) 
+{
+    if (this != &other)
+    {
+        this->name = other.name;
+        this->builtInFlag = other.builtInFlag;
+        this->colors = other.colors;
+    }
+
+    return *this;
 }
 
 QString Theme::getName() const
@@ -58,173 +89,107 @@ void Theme::setBuiltIn(const bool builtIn)
     builtInFlag = builtIn;
 }
 
-QColor Theme::getDefaultTextColor() const
+QStringList Theme::getColorKeys()
 {
-    return defaultTextColor;
+    return keyArray;
 }
 
-void Theme::setDefaultTextColor(const QColor& value)
+Color Theme::getColorByKey(const QString& key) 
 {
-    defaultTextColor = value;
+    return colors.value(key, Color(QColor::Invalid));
 }
 
-QColor Theme::getMarkupColor() const
+void Theme::setColorByKey(const QString& key, const Color& value) 
 {
-    return markupColor;
+    colors.insert(key, value);
 }
 
-void Theme::setMarkupColor(const QColor& value)
+Color Theme::getDefaultTextColor() const
 {
-    markupColor = value;
+    return colors.value("foreground");
 }
 
-QColor Theme::getLinkColor() const
+void Theme::setDefaultTextColor(const Color& value)
 {
-    return linkColor;
+    colors.insert("foreground", value);
 }
 
-void Theme::setLinkColor(const QColor& value)
+Color Theme::getBackgroundColor() const
 {
-    linkColor = value;
+    return colors.value("background");
 }
 
-QColor Theme::getHeadingColor() const
+void Theme::setBackgroundColor(const Color& value)
 {
-    return headingColor;
+    colors.insert("background", value);
 }
 
-void Theme::setHeadingColor(const QColor& value)
+Color Theme::getMarkupColor() const
 {
-    headingColor = value;
+    return colors.value("markup");
 }
 
-QColor Theme::getEmphasisColor() const
+void Theme::setMarkupColor(const Color& value)
 {
-    return emphasisColor;
+    colors.insert("markup", value);
 }
 
-void Theme::setEmphasisColor(const QColor& value)
+Color Theme::getLinkColor() const
 {
-    emphasisColor = value;
+    return colors.value("link");
 }
 
-QColor Theme::getBlockquoteColor() const
+void Theme::setLinkColor(const Color& value)
 {
-    return blockquoteColor;
+    colors.insert("link", value);
 }
 
-void Theme::setBlockquoteColor(const QColor& value)
+Color Theme::getHeadingColor() const
 {
-    blockquoteColor = value;
+    return colors.value("heading");
 }
 
-QColor Theme::getCodeColor() const
+void Theme::setHeadingColor(const Color& value)
 {
-    return codeColor;
+    colors.insert("heading", value);
 }
 
-void Theme::setCodeColor(const QColor& value)
+Color Theme::getEmphasisColor() const
 {
-    codeColor = value;
+    return colors.value("emphasis");
 }
 
-QColor Theme::getSpellingErrorColor() const
+void Theme::setEmphasisColor(const Color& value)
 {
-    return spellingErrorColor;
+    colors.insert("emphasis", value);
 }
 
-void Theme::setSpellingErrorColor(const QColor& value)
+Color Theme::getBlockquoteColor() const
 {
-    spellingErrorColor = value;
+    return colors.value("blockquote");
 }
 
-EditorAspect Theme::getEditorAspect() const
+void Theme::setBlockquoteColor(const Color& value)
 {
-    return editorAspect;
+    colors.insert("blockquote", value);
 }
 
-void Theme::setEditorAspect(const EditorAspect value)
+Color Theme::getCodeColor() const
 {
-    if ((value < EditorAspectFirst) || (value > EditorAspectLast))
-    {
-        editorAspect = EditorAspectFirst;
-        qCritical() << "Theme editor aspect value of " << value
-                    << " is out of range. Defaulting to value of "
-                    << editorAspect;
-    }
-    else
-    {
-        editorAspect = value;
-    }
+    return colors.value("code");
 }
 
-PictureAspect Theme::getBackgroundImageAspect() const
+void Theme::setCodeColor(const Color& value)
 {
-    return backgroundImageAspect;
+    colors.insert("code", value);
 }
 
-void Theme::setBackgroundImageAspect(const PictureAspect value)
+Color Theme::getSpellingErrorColor() const
 {
-    if ((value < PictureAspectFirst) || (value > PictureAspectLast))
-    {
-        backgroundImageAspect = PictureAspectFirst;
-        qCritical() << "Theme background image aspect value of " << value
-                    << " is out of range. Defaulting to value of "
-                    << backgroundImageAspect;
-    }
-    else
-    {
-        backgroundImageAspect = value;
-    }
+    return colors.value("spelling");
 }
 
-QString Theme::getBackgroundImageUrl() const
+void Theme::setSpellingErrorColor(const Color& value)
 {
-    return backgroundImageUrl;
+    colors.insert("spelling", value);
 }
-
-void Theme::setBackgroundImageUrl(const QString& value)
-{
-    backgroundImageUrl = value;
-}
-
-QColor Theme::getBackgroundColor() const
-{
-    return backgroundColor;
-}
-
-void Theme::setBackgroundColor(const QColor& value)
-{
-    backgroundColor = value;
-}
-
-QColor Theme::getEditorBackgroundColor() const
-{
-    return editorBackgroundColor;
-}
-
-void Theme::setEditorBackgroundColor(const QColor& value)
-{
-    editorBackgroundColor = value;
-}
-
-QColor Theme::getHudForegroundColor() const
-{
-    return hudForegroundColor;
-}
-
-void Theme::setHudForegroundColor(const QColor& value)
-{
-    hudForegroundColor = value;
-}
-
-QColor Theme::getHudBackgroundColor() const
-{
-    return hudBackgroundColor;
-}
-
-void Theme::setHudBackgroundColor(const QColor& value)
-{
-    hudBackgroundColor = value;
-}
-

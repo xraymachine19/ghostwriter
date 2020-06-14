@@ -53,7 +53,7 @@
 #include <QTextStream>
 #include <QWidget>
 
-#include "ColorHelper.h"
+#include "Color.h"
 #include "DocumentHistory.h"
 #include "DocumentManager.h"
 #include "DocumentStatistics.h"
@@ -73,6 +73,7 @@
 #include "SessionStatistics.h"
 #include "SessionStatisticsWidget.h"
 #include "SimpleFontDialog.h"
+#include "StyleSheetBuilder.h"
 #include "StyleSheetManagerDialog.h"
 #include "ThemeFactory.h"
 #include "ThemeSelectionDialog.h"
@@ -98,7 +99,6 @@ MainWindow::MainWindow(const QString& filePath, QWidget* parent)
 
     qApp->installEventFilter(this);
 
-    menuBarHeight = 0;
     lastMousePos = QPoint(-1, -1);
 
     appSettings = AppSettings::getInstance();
@@ -221,6 +221,10 @@ MainWindow::MainWindow(const QString& filePath, QWidget* parent)
             GW_OUTLINE_HUD_GEOMETRY_KEY,
             GW_OUTLINE_HUD_OPEN_KEY
         );
+
+    sidebar = new QTabWidget(this);
+    sidebar->setTabPosition(QTabWidget::West);
+    sidebar->addTab(outlineWidget, "Outline");
 
     documentStats = new DocumentStatistics(document, this);
     connect(documentStats, SIGNAL(wordCountChanged(int)), documentStatsWidget, SLOT(setWordCount(int)));
@@ -450,6 +454,7 @@ MainWindow::MainWindow(const QString& filePath, QWidget* parent)
     htmlPreview->setStyleSheet(appSettings->getCurrentCssFile());
 
     splitter = new QSplitter(this);
+    splitter->addWidget(sidebar);
     splitter->addWidget(editorPane);
     splitter->addWidget(htmlPreview);
     splitter->setStyleSheet("QSplitter:handle { border: 0 }"
@@ -551,24 +556,6 @@ QSize MainWindow::sizeHint() const
 void MainWindow::resizeEvent(QResizeEvent* event)
 {
     adjustEditorWidth(event->size().width());
-
-    if (!originalBackgroundImage.isNull())
-    {
-        predrawBackgroundImage();
-    }
-}
-
-void MainWindow::moveEvent(QMoveEvent* event)
-{
-    Q_UNUSED(event)
-
-    // Need to redraw the background image in case the window has moved
-    // onto a different screen where the device pixel ratio is different.
-    //
-    if (!originalBackgroundImage.isNull())
-    {
-        predrawBackgroundImage();
-    }
 }
 
 void MainWindow::keyPressEvent(QKeyEvent* e)
@@ -645,7 +632,7 @@ bool MainWindow::eventFilter(QObject* obj, QEvent* event)
     {
         QMouseEvent* mouseEvent = static_cast<QMouseEvent*>(event);
 
-        int hotSpotHeight = 5;
+        int hotSpotHeight = 20;
 
         if (isMenuBarVisible())
         {
@@ -687,34 +674,6 @@ bool MainWindow::eventFilter(QObject* obj, QEvent* event)
     }
 
     return false;
-}
-
-void MainWindow::paintEvent(QPaintEvent* event)
-{
-    QPainter painter(this);
-    qreal dpr = 1.0;
-
-#if QT_VERSION >= 0x050600
-    dpr = devicePixelRatioF();
-#endif
-
-    QRect rect(event->rect().topLeft() * dpr, event->rect().size() * dpr);
-
-    painter.fillRect(rect, theme.getBackgroundColor().rgb());
-
-    if (!adjustedBackgroundImage.isNull())
-    {
-        painter.drawPixmap(0, 0, adjustedBackgroundImage);
-    }
-
-    if (EditorAspectStretch == theme.getEditorAspect())
-    {
-        painter.fillRect(this->rect(), theme.getEditorBackgroundColor());
-    }
-
-    painter.end();
-
-    QMainWindow::paintEvent(event);
 }
 
 void MainWindow::closeEvent(QCloseEvent* event)
@@ -816,8 +775,6 @@ void MainWindow::toggleHtmlPreview(bool checked)
     }
 
     adjustEditorWidth(this->width());
-
-    applyStatusBarStyle();
 
     htmlPreviewButton->blockSignals(false);
     htmlPreviewMenuAction->blockSignals(false);
@@ -1549,13 +1506,15 @@ HudWindow* MainWindow::createHudWindow
 
 void MainWindow::buildMenuBar()
 {
+    menuBarHeight = this->menuBar()->height();
+
     QMenu* fileMenu = this->menuBar()->addMenu(tr("&File"));
 
-    fileMenu->addAction(tr("&New"), documentManager, SLOT(close()), QKeySequence::New);
-    fileMenu->addAction(tr("&Open"), documentManager, SLOT(open()), QKeySequence::Open);
+    this->addAction(fileMenu->addAction(tr("&New"), documentManager, SLOT(close()), QKeySequence::New));
+    this->addAction(fileMenu->addAction(tr("&Open"), documentManager, SLOT(open()), QKeySequence::Open));
 
     QMenu* recentFilesMenu = new QMenu(tr("Open &Recent..."));
-    recentFilesMenu->addAction(tr("Reopen Closed File"), documentManager, SLOT(reopenLastClosedFile()), QKeySequence("SHIFT+CTRL+T"));
+    this->addAction(recentFilesMenu->addAction(tr("Reopen Closed File"), documentManager, SLOT(reopenLastClosedFile()), QKeySequence("SHIFT+CTRL+T")));
     recentFilesMenu->addSeparator();
 
     for (int i = 0; i < MAX_RECENT_FILES; i++)
@@ -1569,52 +1528,52 @@ void MainWindow::buildMenuBar()
     fileMenu->addMenu(recentFilesMenu);
 
     fileMenu->addSeparator();
-    fileMenu->addAction(tr("&Save"), documentManager, SLOT(save()), QKeySequence::Save);
-    fileMenu->addAction(tr("Save &As..."), documentManager, SLOT(saveAs()), QKeySequence::SaveAs);
+    this->addAction(fileMenu->addAction(tr("&Save"), documentManager, SLOT(save()), QKeySequence::Save));
+    this->addAction(fileMenu->addAction(tr("Save &As..."), documentManager, SLOT(saveAs()), QKeySequence::SaveAs));
     fileMenu->addAction(tr("R&ename..."), documentManager, SLOT(rename()));
     fileMenu->addAction(tr("Re&load from Disk..."), documentManager, SLOT(reload()));
     fileMenu->addSeparator();
-    fileMenu->addAction(tr("&Export"), documentManager, SLOT(exportFile()), QKeySequence("CTRL+E"));
+    this->addAction(fileMenu->addAction(tr("&Export"), documentManager, SLOT(exportFile()), QKeySequence("CTRL+E")));
     fileMenu->addSeparator();
     fileMenu->addAction(tr("&Quit"), this, SLOT(quitApplication()), QKeySequence::Quit)->setMenuRole(QAction::QuitRole);
 
     QMenu* editMenu = this->menuBar()->addMenu(tr("&Edit"));
-    editMenu->addAction(tr("&Undo"), editor, SLOT(undo()), QKeySequence::Undo);
-    editMenu->addAction(tr("&Redo"), editor, SLOT(redo()), QKeySequence::Redo);
+    this->addAction(editMenu->addAction(tr("&Undo"), editor, SLOT(undo()), QKeySequence::Undo));
+    this->addAction(editMenu->addAction(tr("&Redo"), editor, SLOT(redo()), QKeySequence::Redo));
     editMenu->addSeparator();
-    editMenu->addAction(tr("Cu&t"), editor, SLOT(cut()), QKeySequence::Cut);
-    editMenu->addAction(tr("&Copy"), editor, SLOT(copy()), QKeySequence::Copy);
-    editMenu->addAction(tr("&Paste"), editor, SLOT(paste()), QKeySequence::Paste);
-    editMenu->addAction(tr("Copy &HTML"), this, SLOT(copyHtml()), QKeySequence("SHIFT+CTRL+C"));
+    this->addAction(editMenu->addAction(tr("Cu&t"), editor, SLOT(cut()), QKeySequence::Cut));
+    this->addAction(editMenu->addAction(tr("&Copy"), editor, SLOT(copy()), QKeySequence::Copy));
+    this->addAction(editMenu->addAction(tr("&Paste"), editor, SLOT(paste()), QKeySequence::Paste));
+    this->addAction(editMenu->addAction(tr("Copy &HTML"), this, SLOT(copyHtml()), QKeySequence("SHIFT+CTRL+C")));
     editMenu->addSeparator();
     editMenu->addAction(tr("&Insert Image..."), this, SLOT(insertImage()));
     editMenu->addSeparator();
-    editMenu->addAction(tr("&Find"), findReplaceDialog, SLOT(showFindMode()), QKeySequence::Find);
-    editMenu->addAction(tr("Rep&lace"), findReplaceDialog, SLOT(showReplaceMode()), QKeySequence::Replace);
+    this->addAction(editMenu->addAction(tr("&Find"), findReplaceDialog, SLOT(showFindMode()), QKeySequence::Find));
+    this->addAction(editMenu->addAction(tr("Rep&lace"), findReplaceDialog, SLOT(showReplaceMode()), QKeySequence::Replace));
     editMenu->addSeparator();
     editMenu->addAction(tr("&Spell check"), editor, SLOT(runSpellChecker()));
 
     QMenu* formatMenu = this->menuBar()->addMenu(tr("For&mat"));
-    formatMenu->addAction(tr("&Bold"), editor, SLOT(bold()), QKeySequence::Bold);
-    formatMenu->addAction(tr("&Italic"), editor, SLOT(italic()), QKeySequence::Italic);
-    formatMenu->addAction(tr("Stri&kethrough"), editor, SLOT(strikethrough()), QKeySequence("Ctrl+K"));
-    formatMenu->addAction(tr("&HTML Comment"), editor, SLOT(insertComment()), QKeySequence("Ctrl+/"));
+    this->addAction(formatMenu->addAction(tr("&Bold"), editor, SLOT(bold()), QKeySequence::Bold));
+    this->addAction(formatMenu->addAction(tr("&Italic"), editor, SLOT(italic()), QKeySequence::Italic));
+    this->addAction(formatMenu->addAction(tr("Stri&kethrough"), editor, SLOT(strikethrough()), QKeySequence("Ctrl+K")));
+    this->addAction(formatMenu->addAction(tr("&HTML Comment"), editor, SLOT(insertComment()), QKeySequence("Ctrl+/")));
     formatMenu->addSeparator();
-    formatMenu->addAction(tr("I&ndent"), editor, SLOT(indentText()), QKeySequence("Tab"));
-    formatMenu->addAction(tr("&Unindent"), editor, SLOT(unindentText()), QKeySequence("Shift+Tab"));
+    this->addAction(formatMenu->addAction(tr("I&ndent"), editor, SLOT(indentText()), QKeySequence("Tab")));
+    this->addAction(formatMenu->addAction(tr("&Unindent"), editor, SLOT(unindentText()), QKeySequence("Shift+Tab")));
     formatMenu->addSeparator();
-    formatMenu->addAction(tr("Block &Quote"), editor, SLOT(createBlockquote()), QKeySequence("Ctrl+."));
-    formatMenu->addAction(tr("&Strip Block Quote"), editor, SLOT(removeBlockquote()), QKeySequence("Ctrl+,"));
+    this->addAction(formatMenu->addAction(tr("Block &Quote"), editor, SLOT(createBlockquote()), QKeySequence("Ctrl+.")));
+    this->addAction(formatMenu->addAction(tr("&Strip Block Quote"), editor, SLOT(removeBlockquote()), QKeySequence("Ctrl+,")));
     formatMenu->addSeparator();
-    formatMenu->addAction(tr("&* Bullet List"), editor, SLOT(createBulletListWithAsteriskMarker()), QKeySequence("Ctrl+8"));
-    formatMenu->addAction(tr("&- Bullet List"), editor, SLOT(createBulletListWithMinusMarker()), QKeySequence("Ctrl+Shift+-"));
-    formatMenu->addAction(tr("&+ Bullet List"), editor, SLOT(createBulletListWithPlusMarker()), QKeySequence("Ctrl+Shift+="));
+    this->addAction(formatMenu->addAction(tr("&* Bullet List"), editor, SLOT(createBulletListWithAsteriskMarker()), QKeySequence("Ctrl+8")));
+    this->addAction(formatMenu->addAction(tr("&- Bullet List"), editor, SLOT(createBulletListWithMinusMarker()), QKeySequence("Ctrl+Shift+-")));
+    this->addAction(formatMenu->addAction(tr("&+ Bullet List"), editor, SLOT(createBulletListWithPlusMarker()), QKeySequence("Ctrl+Shift+=")));
     formatMenu->addSeparator();
-    formatMenu->addAction(tr("1&. Numbered List"), editor, SLOT(createNumberedListWithPeriodMarker()), QKeySequence("Ctrl+1"));
-    formatMenu->addAction(tr("1&) Numbered List"), editor, SLOT(createNumberedListWithParenthesisMarker()), QKeySequence("Ctrl+0"));
+    this->addAction(formatMenu->addAction(tr("1&. Numbered List"), editor, SLOT(createNumberedListWithPeriodMarker()), QKeySequence("Ctrl+1")));
+    this->addAction(formatMenu->addAction(tr("1&) Numbered List"), editor, SLOT(createNumberedListWithParenthesisMarker()), QKeySequence("Ctrl+0")));
     formatMenu->addSeparator();
-    formatMenu->addAction(tr("&Task List"), editor, SLOT(createTaskList()), QKeySequence("Ctrl+T"));
-    formatMenu->addAction(tr("Toggle Task(s) &Complete"), editor, SLOT(toggleTaskComplete()), QKeySequence("Ctrl+D"));
+    this->addAction(formatMenu->addAction(tr("&Task List"), editor, SLOT(createTaskList()), QKeySequence("Ctrl+T")));
+    this->addAction(formatMenu->addAction(tr("Toggle Task(s) &Complete"), editor, SLOT(toggleTaskComplete()), QKeySequence("Ctrl+D")));
 
     QMenu* viewMenu = this->menuBar()->addMenu(tr("&View"));
 
@@ -1624,6 +1583,7 @@ void MainWindow::buildMenuBar()
     fullScreenMenuAction->setShortcut(QKeySequence("F11"));
     connect(fullScreenMenuAction, SIGNAL(toggled(bool)), this, SLOT(toggleFullScreen(bool)));
     viewMenu->addAction(fullScreenMenuAction);
+    this->addAction(fullScreenMenuAction);
 
     htmlPreviewMenuAction = new QAction(tr("&Preview in HTML"), this);
     htmlPreviewMenuAction->setCheckable(true);
@@ -1631,17 +1591,19 @@ void MainWindow::buildMenuBar()
     htmlPreviewMenuAction->setShortcut(QKeySequence("CTRL+M"));
     connect(htmlPreviewMenuAction, SIGNAL(toggled(bool)), this, SLOT(toggleHtmlPreview(bool)));
     viewMenu->addAction(htmlPreviewMenuAction);
-
-    viewMenu->addAction(tr("&Outline HUD"), this, SLOT(showOutlineHud()), QKeySequence("CTRL+L"));
-    viewMenu->addAction(tr("&Cheat Sheet HUD"), this, SLOT(showCheatSheetHud()), QKeySequence::HelpContents);
+    this->addAction(htmlPreviewMenuAction);
+    
+    this->addAction(viewMenu->addAction(tr("&Outline HUD"), this, SLOT(showOutlineHud()), QKeySequence("CTRL+L")));
+    this->addAction(viewMenu->addAction(tr("&Cheat Sheet HUD"), this, SLOT(showCheatSheetHud()), QKeySequence::HelpContents));
     viewMenu->addAction(tr("&Document Statistics HUD"), this, SLOT(showDocumentStatisticsHud()));
     viewMenu->addAction(tr("&Session Statistics HUD"), this, SLOT(showSessionStatisticsHud()));
     viewMenu->addSeparator();
     hideOpenHudsAction =
         viewMenu->addAction(tr("Hide Open &HUD Windows"), this, SLOT(toggleOpenHudsVisibility()), QKeySequence("CTRL+SHIFT+H"));
+    this->addAction(hideOpenHudsAction);
     viewMenu->addSeparator();
-    viewMenu->addAction(tr("Increase Font Size"), editor, SLOT(increaseFontSize()), QKeySequence("CTRL+="));
-    viewMenu->addAction(tr("Decrease Font Size"), editor, SLOT(decreaseFontSize()), QKeySequence("CTRL+-"));
+    this->addAction(viewMenu->addAction(tr("Increase Font Size"), editor, SLOT(increaseFontSize()), QKeySequence("CTRL+=")));
+    this->addAction(viewMenu->addAction(tr("Decrease Font Size"), editor, SLOT(decreaseFontSize()), QKeySequence("CTRL+-")));
 
     QMenu* settingsMenu = this->menuBar()->addMenu(tr("&Settings"));
     settingsMenu->addAction(tr("Themes..."), this, SLOT(changeTheme()));
@@ -1791,6 +1753,27 @@ void MainWindow::buildStatusBar()
 
     statusBar()->show();
 
+    // Ensure DPI scaling of buttons with application menu bar font.
+    //
+    int menuBarFontWidth = this->menuBar()->fontInfo().pixelSize() + 10;
+
+    fullScreenButton->setIcon(QIcon(":/resources/images/fullscreen-dark.svg"));
+    fullScreenButton->setIconSize(QSize(menuBarFontWidth, menuBarFontWidth));
+    focusModeButton->setIcon(QIcon(":/resources/images/focus-dark.svg"));
+    focusModeButton->setIconSize(QSize(menuBarFontWidth, menuBarFontWidth));
+    hemingwayModeButton->setIcon(QIcon(":/resources/images/hemingway-dark.svg"));
+    hemingwayModeButton->setIconSize(QSize(menuBarFontWidth, menuBarFontWidth));
+    htmlPreviewButton->setIcon(QIcon(":/resources/images/html-preview-dark.svg"));
+    htmlPreviewButton->setIconSize(QSize(menuBarFontWidth, menuBarFontWidth));
+    hideOpenHudsButton->setIcon(QIcon(":/resources/images/hide-huds-dark.svg"));
+    hideOpenHudsButton->setIconSize(QSize(menuBarFontWidth, menuBarFontWidth));
+    copyHtmlButton->setIcon(QIcon(":/resources/images/copy-html-dark.svg"));
+    copyHtmlButton->setIconSize(QSize(menuBarFontWidth, menuBarFontWidth));
+    exportButton->setIcon(QIcon(":/resources/images/export-dark.svg"));
+    exportButton->setIconSize(QSize(menuBarFontWidth, menuBarFontWidth));
+    previewOptionsButton->setIcon(QIcon(":/resources/images/configure-dark.svg"));
+    previewOptionsButton->setIconSize(QSize(menuBarFontWidth, menuBarFontWidth));
+
     // Add status bar widgets to a list for convenience
     // in applying graphics effects to them.
     //
@@ -1823,11 +1806,17 @@ void MainWindow::adjustEditorWidth(int width)
 {
     int editorWidth = width;
 
+    if (sidebar->isVisible())
+    {
+        editorWidth -= sidebar->width();
+    }
+
     if (htmlPreview->isVisible())
     {
         editorWidth /= 2;
 
         QList<int> sizes;
+        sizes.append(sidebar->width());
         sizes.append(editorWidth);
         sizes.append(editorWidth);
         splitter->setSizes(sizes);
@@ -1840,39 +1829,6 @@ void MainWindow::adjustEditorWidth(int width)
     editor->centerCursor();
 }
 
-void MainWindow::applyStatusBarStyle()
-{
-    QString styleSheet = "";
-    QTextStream stream(&styleSheet);
-
-    int border = 0;
-
-    if
-    (
-        (EditorAspectStretch == theme.getEditorAspect())
-        ||
-        htmlPreview->isVisible()
-    )
-    {
-        border = 1;
-    }
-
-    QColor borderColor = theme.getDefaultTextColor();
-    borderColor.setAlpha(30);
-
-    QString borderColorRGBA = ColorHelper::toRgbaString(borderColor);
-
-    stream
-        << "QStatusBar { margin: 0; padding: 0; border-top: "
-        << border
-        << "px solid "
-        << borderColorRGBA
-        << "; border-left: 0; border-right: 0; border-bottom: 0; background: transparent } "
-        << "QStatusBar::item { border: 0; padding: 0; margin: 0 } ";
-
-    statusBar()->setStyleSheet(styleSheet);
-}
-
 void MainWindow::applyTheme()
 {
     if (!theme.getName().isNull() && !theme.getName().isEmpty())
@@ -1880,262 +1836,29 @@ void MainWindow::applyTheme()
         appSettings->setThemeName(theme.getName());
     }
 
-    if (EditorAspectStretch == theme.getEditorAspect())
+    StyleSheetBuilder styler(theme, (InterfaceStyleRounded == appSettings->getInterfaceStyle()));
+
+    // Remove old graphics effects from the status bar widgets.
+    foreach (QWidget* widget, statusBarWidgets)
     {
-        theme.setBackgroundColor(theme.getEditorBackgroundColor());
-    }
-
-    QString styleSheet;
-    QTextStream stream(&styleSheet);
-
-    double fgBrightness = ColorHelper::getLuminance(theme.getDefaultTextColor());
-    double bgBrightness = ColorHelper::getLuminance(theme.getEditorBackgroundColor());
-
-    QColor scrollBarColor;
-    QColor chromeFgColor = theme.getDefaultTextColor();
-
-    // If the background color is brighter than the foreground color...
-    if (bgBrightness > fgBrightness)
-    {
-        // Create a UI chrome color based on a lightened editor text color,
-        // such that the new color achieves a lower contrast ratio.
+        // Do NOT delete the old QGraphicsColorizeEffect.  Qt seems to
+        // delete it at an arbitrary time, based on parental ownership.
         //
-        chromeFgColor = ColorHelper::lightenToMatchContrastRatio
-            (
-                theme.getDefaultTextColor(),
-                theme.getEditorBackgroundColor(),
-                2.1
-            );
-
-        // Slightly blend the new UI chrome color with the editor background color
-        // to help it match the theme better.
-        //
-        chromeFgColor.setAlpha(220);
-        chromeFgColor = ColorHelper::applyAlpha
-            (
-                chromeFgColor,
-                theme.getEditorBackgroundColor()
-            );
-
-        // Blend the UI chrome color with the background color even further for
-        // the scroll bar color, as the scroll bar will otherwise tend to
-        // stand out.
-        //
-        scrollBarColor = chromeFgColor;
-        scrollBarColor.setAlpha(200);
-        scrollBarColor = ColorHelper::applyAlpha
-            (
-                scrollBarColor,
-                theme.getEditorBackgroundColor()
-            );
-
+        widget->setGraphicsEffect(NULL);
     }
-    // Else if the foreground color is brighter than the background color...
-    else
+
+    // Set colorize effects for icon buttons.
+    foreach (QWidget* widget, statusBarButtons)
     {
-        chromeFgColor = chromeFgColor.darker(120);
-        scrollBarColor = chromeFgColor;
+        QGraphicsColorizeEffect* colorizeEffect = new QGraphicsColorizeEffect(this);
+        colorizeEffect->setColor(styler.getChromeForegroundColor());
+        widget->setGraphicsEffect(colorizeEffect);
     }
-
-    QString scrollbarColorRGB = ColorHelper::toRgbString(scrollBarColor);
-    QColor scrollBarHoverColor = theme.getLinkColor();
-    QString scrollBarHoverRGB = ColorHelper::toRgbString(scrollBarHoverColor);
-
-    QString backgroundColorRGBA;
-
-    if (EditorAspectStretch == theme.getEditorAspect())
-    {
-        backgroundColorRGBA = "transparent";
-    }
-    else
-    {
-        backgroundColorRGBA =
-            ColorHelper::toRgbaString(theme.getEditorBackgroundColor());
-    }
-
-    QString editorSelectionFgColorRGB =
-        ColorHelper::toRgbString(theme.getEditorBackgroundColor());
-
-    QString editorSelectionBgColorRGB =
-        ColorHelper::toRgbString(theme.getDefaultTextColor());
-
-    QString menuBarItemFgColorRGB;
-    QString menuBarItemBgColorRGBA;
-    QString menuBarItemFgPressColorRGB;
-    QString menuBarItemBgPressColorRGBA;
-
-    QString fullScreenIcon;
-    QString focusIcon;
-    QString hemingwayIcon;
-    QString htmlPreviewIcon;
-    QString hideOpenHudsIcon;
-    QString copyHtmlIcon;
-    QString exportIcon;
-    QString markdownOptionsIcon;
-
-    QString statusBarItemFgColorRGB;
-    QString statusBarButtonFgPressHoverColorRGB;
-    QString statusBarButtonBgPressHoverColorRGBA;
-
-    if (EditorAspectStretch == theme.getEditorAspect())
-    {
-        fullScreenIcon = ":/resources/images/fullscreen-dark.svg";
-        focusIcon = ":/resources/images/focus-dark.svg";
-        hemingwayIcon = ":/resources/images/hemingway-dark.svg";
-        htmlPreviewIcon = ":/resources/images/html-preview-dark.svg";
-        hideOpenHudsIcon = ":/resources/images/hide-huds-dark.svg";
-        copyHtmlIcon = ":/resources/images/copy-html-dark.svg";
-        exportIcon = ":/resources/images/export-dark.svg";
-        markdownOptionsIcon = ":/resources/images/configure-dark.svg";
-
-        QColor buttonPressColor(chromeFgColor);
-        buttonPressColor.setAlpha(30);
-
-        menuBarItemFgColorRGB = ColorHelper::toRgbString(chromeFgColor);
-        menuBarItemBgColorRGBA = "transparent";
-        menuBarItemFgPressColorRGB = menuBarItemFgColorRGB;
-        menuBarItemBgPressColorRGBA =
-            ColorHelper::toRgbaString(buttonPressColor);
-
-        statusBarItemFgColorRGB = menuBarItemFgColorRGB;
-        statusBarButtonFgPressHoverColorRGB = menuBarItemFgPressColorRGB;
-        statusBarButtonBgPressHoverColorRGBA = menuBarItemBgPressColorRGBA;
-
-        // Remove old graphics effects from the status bar widgets.
-        foreach (QWidget* widget, statusBarWidgets)
-        {
-            // Do NOT delete the old QGraphicsColorizeEffect.  Qt seems to
-            // delete it at an arbitrary time, based on parental ownership.
-            //
-            widget->setGraphicsEffect(NULL);
-        }
-
-        // Set colorize effects for icon buttons.
-        foreach (QWidget* widget, statusBarButtons)
-        {
-            QGraphicsColorizeEffect* colorizeEffect = new QGraphicsColorizeEffect(this);
-            colorizeEffect->setColor(chromeFgColor);
-            widget->setGraphicsEffect(colorizeEffect);
-        }
-
-        // Remove menu bar text drop shadow effect.
-        this->menuBar()->setGraphicsEffect(NULL);
-    }
-    else
-    {
-        // Make the UI chrome color an off white.  A drop shadow will be
-        // applied to supply contrast with the background image.
-        //
-        QColor chromeFgColor = QColor("#e5e8e8");
-
-        menuBarItemFgColorRGB = ColorHelper::toRgbString(chromeFgColor);
-        menuBarItemBgColorRGBA = "transparent";
-        menuBarItemFgPressColorRGB = menuBarItemFgColorRGB;
-        chromeFgColor.setAlpha(50);
-        menuBarItemBgPressColorRGBA = ColorHelper::toRgbaString(chromeFgColor);
-
-        fullScreenIcon = ":/resources/images/fullscreen-light.svg";
-        focusIcon = ":/resources/images/focus-light.svg";
-        hemingwayIcon = ":/resources/images/hemingway-light.svg";
-        htmlPreviewIcon = ":/resources/images/html-preview-light.svg";
-        hideOpenHudsIcon = ":/resources/images/hide-huds-light.svg";
-        copyHtmlIcon = ":/resources/images/copy-html-light.svg";
-        exportIcon = ":/resources/images/export-light.svg";
-        markdownOptionsIcon = ":/resources/images/configure-light.svg";
-
-        statusBarItemFgColorRGB = menuBarItemFgColorRGB;
-        statusBarButtonFgPressHoverColorRGB = menuBarItemFgPressColorRGB;
-        statusBarButtonBgPressHoverColorRGBA = menuBarItemBgPressColorRGBA;
-
-        // Set drop shadow effect for status bar widgets.
-        foreach (QWidget* widget, statusBarWidgets)
-        {
-            QGraphicsDropShadowEffect* chromeDropShadowEffect = new QGraphicsDropShadowEffect();
-            chromeDropShadowEffect->setColor(QColor(Qt::black));
-            chromeDropShadowEffect->setBlurRadius(3.5);
-            chromeDropShadowEffect->setXOffset(1.0);
-            chromeDropShadowEffect->setYOffset(1.0);
-
-            widget->setGraphicsEffect(chromeDropShadowEffect);
-        }
-
-        QGraphicsDropShadowEffect* menuBarTextDropShadowEffect = new QGraphicsDropShadowEffect();
-        menuBarTextDropShadowEffect->setColor(QColor(Qt::black));
-        menuBarTextDropShadowEffect->setBlurRadius(3.5);
-        menuBarTextDropShadowEffect->setXOffset(1.0);
-        menuBarTextDropShadowEffect->setYOffset(1.0);
-
-        // Set drop shadow effect for menu bar text.
-        this->menuBar()->setGraphicsEffect(menuBarTextDropShadowEffect);
-    }
-
-    editor->setAspect(theme.getEditorAspect());
-    styleSheet = "";
-
-    QString corners = "";
-    QString scrollBarRadius = "0px";
-    QString scrollAreaPadding = "3px 3px 0px 3px";
-
-    if (EditorAspectCenter == theme.getEditorAspect())
-    {
-        scrollAreaPadding = "3px";
-    }
-
-    if (InterfaceStyleRounded == appSettings->getInterfaceStyle())
-    {
-        if (EditorAspectCenter == theme.getEditorAspect())
-        {
-            corners = "border-radius: 8;";
-        }
-
-        scrollBarRadius = "4px";
-    }
-
-    QString defaultTextColorRGB =
-        ColorHelper::toRgbString(theme.getDefaultTextColor());
-
-    stream
-        << "QPlainTextEdit { border: 0; "
-        << corners
-        << "margin: 0; padding: 5px; background-color: "
-        << backgroundColorRGBA
-        << "; color: "
-        << defaultTextColorRGB
-        << "; selection-color: "
-        << editorSelectionFgColorRGB
-        << "; selection-background-color: "
-        << editorSelectionBgColorRGB
-        << " } "
-        << "QAbstractScrollArea::corner { background: transparent } "
-        << "QAbstractScrollArea { padding: "
-        << scrollAreaPadding
-        << "; margin: 0 } "
-        << "QScrollBar::horizontal { border: 0; background: transparent; height: 8px; margin: 0 } "
-        << "QScrollBar::handle:horizontal { border: 0; background: "
-        << scrollbarColorRGB
-        << "; min-width: 50px; border-radius: "
-        << scrollBarRadius
-        << "; } "
-        << "QScrollBar::vertical { border: 0; background: transparent; width: 8px; margin: 0 } "
-        << "QScrollBar::handle:vertical { border: 0; background: "
-        << scrollbarColorRGB
-        << "; min-height: 50px; border-radius: "
-        << scrollBarRadius
-        << "; } "
-        << "QScrollBar::handle:vertical:hover { background: "
-        << scrollBarHoverRGB
-        << " } "
-        << "QScrollBar::handle:horizontal:hover { background: "
-        << scrollBarHoverRGB
-        << " } "
-        << "QScrollBar::add-line { background: transparent; border: 0 } "
-        << "QScrollBar::sub-line { background: transparent; border: 0 } "
-        ;
 
     editor->setColorScheme
     (
         theme.getDefaultTextColor(),
-        theme.getEditorBackgroundColor(),
+        theme.getBackgroundColor(),
         theme.getMarkupColor(),
         theme.getLinkColor(),
         theme.getHeadingColor(),
@@ -2145,357 +1868,41 @@ void MainWindow::applyTheme()
         theme.getSpellingErrorColor()
     );
 
-    editor->setStyleSheet(styleSheet);
-    styleSheet = "";
-
-    // Wipe out old background image drawing material.
-    originalBackgroundImage = QPixmap();
-    adjustedBackgroundImage = QPixmap();
-
-    if
-    (
-        !theme.getBackgroundImageUrl().isNull() &&
-        !theme.getBackgroundImageUrl().isEmpty()
-    )
-    {
-        // Predraw background image for paintEvent()
-        originalBackgroundImage.load(theme.getBackgroundImageUrl());
-        predrawBackgroundImage();
-    }
-
-    stream
-        << "#editorLayoutArea { background-color: transparent; border: 0; margin: 0 }"
-        << "QMenuBar { background: transparent } "
-        << "QMenuBar::item { background: "
-        << menuBarItemBgColorRGBA
-        << "; color: "
-        << menuBarItemFgColorRGB
-        << "; padding: 4px 6px 4px 6px } "
-        << "QMenuBar::item:pressed { background-color: "
-        << menuBarItemBgPressColorRGBA
-        << "; color: "
-        << menuBarItemFgPressColorRGB
-        << "; border-radius: 3px"
-        << " } "
-        ;
+    editor->setStyleSheet(styler.getEditorStyleSheet());
 
     // Do not call this->setStyleSheet().  Calling it more than once in a run
     // (i.e., when changing a theme) causes a crash in Qt 5.11.  Instead,
     // change the main window's style sheet via qApp.
     //
-    qApp->setStyleSheet(styleSheet);
-    styleSheet = "";
+    qApp->setStyleSheet(styler.getLayoutStyleSheet());
 
-    stream
-        << "QSplitter::handle:vertical { height: 0px; } "
-        << "QSplitter::handle:horizontal { width: 0px; } ";
-
-    splitter->setStyleSheet(styleSheet);
-
-    applyStatusBarStyle();
-
-    // Make the word count and focus mode button font size
-    // match the menu bar's font size, since on Windows using
-    // the default QLabel and QPushButton font sizes results in
-    // tiny font sizes for these.  We need them to stand out
-    // a little bit more than a typical label or button.
-    //
-    int menuBarFontSize = this->menuBar()->fontInfo().pointSize();
-
-    styleSheet = "";
-
-    stream
-        << "QLabel { font-size: "
-        << menuBarFontSize
-        << "pt; margin: 0px; padding: 5px; border: 0; background: transparent; color: "
-        << statusBarItemFgColorRGB
-        << " } "
-        << "QPushButton { padding: 2 5 2 5; margin: 0; border: 0; border-radius: 5px; background: transparent"
-        << "; color: "
-        << statusBarItemFgColorRGB
-        << " } "
-        << "QPushButton:pressed, QPushButton:flat, QPushButton:checked, QPushButton:hover { padding: 2 5 2 5; margin: 0; color: "
-        << statusBarButtonFgPressHoverColorRGB
-        << "; background-color: "
-        << statusBarButtonBgPressHoverColorRGBA
-        << " } "
-        ;
+    splitter->setStyleSheet(styler.getSplitterStyleSheet());
+    this->statusBar()->setStyleSheet(styler.getStatusBarStyleSheet());
+    //statusLabel->setStyleSheet(styler.getStatusLabelStyleSheet());
 
     foreach (QWidget* w, statusBarWidgets)
     {
-        w->setStyleSheet(styleSheet);
-    }
-
-    // Ensure DPI scaling of buttons with application menu bar font.
-    //
-    int menuBarFontWidth = this->menuBar()->fontInfo().pixelSize() + 10;
-
-    fullScreenButton->setIcon(QIcon(fullScreenIcon));
-    fullScreenButton->setIconSize(QSize(menuBarFontWidth, menuBarFontWidth));
-    focusModeButton->setIcon(QIcon(focusIcon));
-    focusModeButton->setIconSize(QSize(menuBarFontWidth, menuBarFontWidth));
-    hemingwayModeButton->setIcon(QIcon(hemingwayIcon));
-    hemingwayModeButton->setIconSize(QSize(menuBarFontWidth, menuBarFontWidth));
-    htmlPreviewButton->setIcon(QIcon(htmlPreviewIcon));
-    htmlPreviewButton->setIconSize(QSize(menuBarFontWidth, menuBarFontWidth));
-    hideOpenHudsButton->setIcon(QIcon(hideOpenHudsIcon));
-    hideOpenHudsButton->setIconSize(QSize(menuBarFontWidth, menuBarFontWidth));
-    copyHtmlButton->setIcon(QIcon(copyHtmlIcon));
-    copyHtmlButton->setIconSize(QSize(menuBarFontWidth, menuBarFontWidth));
-    exportButton->setIcon(QIcon(exportIcon));
-    exportButton->setIconSize(QSize(menuBarFontWidth, menuBarFontWidth));
-    previewOptionsButton->setIcon(QIcon(markdownOptionsIcon));
-    previewOptionsButton->setIconSize(QSize(menuBarFontWidth, menuBarFontWidth));
-
-    styleSheet = "";
-
-    stream
-        << "color: "
-        << statusBarButtonFgPressHoverColorRGB
-        << "; background-color: "
-        << statusBarButtonBgPressHoverColorRGBA
-        << "; border-radius: 5px; padding: 3px"
-        ;
-
-    statusLabel->setStyleSheet(styleSheet);
-    styleSheet = "";
-
-    // Style the HUDs
-
-    QString hudFgString = ColorHelper::toRgbString(theme.getHudForegroundColor());
-
-    QColor alphaHudSelectionColor = theme.getHudForegroundColor();
-    alphaHudSelectionColor.setAlpha(200);
-    QString hudSelectionFgString = ColorHelper::toRgbString(theme.getHudBackgroundColor());
-    QString hudSelectionBgString = ColorHelper::toRgbaString(alphaHudSelectionColor);
-
-    int hudFontSize = cheatSheetWidget->font().pointSize();
-
-    QString listSelectionBorderRadius = "3px";
-
-    if (InterfaceStyleSquare == appSettings->getInterfaceStyle())
-    {
-        listSelectionBorderRadius = "0px";
-    }
-
-    // Important!  For QListWidget (used in Outline HUD), set
-    // QListWidget { outline: none } for the style sheet to get rid of the
-    // focus rectangle without losing keyboard focus capability.
-    // Unforntunately, this property isn't in the Qt documentation, so
-    // it's being documented here for posterity's sake.
-    //
-    if (outlineWidget->alternatingRowColors())
-    {
-        int primaryRowAlpha = 0;
-        int alternateRowAlpha = 20;
-
-        double hudFgBrightness = ColorHelper::getLuminance(theme.getHudForegroundColor());
-        double hudBgBrightness = ColorHelper::getLuminance(theme.getHudBackgroundColor());
-
-        // If the HUD background color is brighter than the foreground color...
-        if (hudBgBrightness > hudFgBrightness)
-        {
-            primaryRowAlpha = 10;
-            alternateRowAlpha = 50;
-        }
-
-        stream << "QListWidget { outline: none; border: 0; padding: 1; background-color: transparent; color: "
-               << hudFgString
-               << "; alternate-background-color: rgba(255, 255, 255, "
-               << alternateRowAlpha
-               << "); font-size: "
-               << hudFontSize
-               << "pt } QListWidget::item { padding: 1 0 1 0; margin: 0; background-color: "
-               << "rgba(0, 0, 0, "
-               << primaryRowAlpha
-               << ") } QListWidget::item:alternate { padding: 1; margin: 0; background-color: "
-               << "rgba(255, 255, 255, 10)"
-               << " } "
-               << "QListWidget::item:selected { border-radius: "
-               << listSelectionBorderRadius
-               << "; color: "
-               << hudSelectionFgString
-               << "; background-color: "
-               << hudSelectionBgString
-               << " } "
-            ;
-    }
-    else
-    {
-        stream << "QListWidget { outline: none; border: 0; padding: 1; background-color: transparent; color: "
-               << hudFgString
-               << "; font-size: "
-               << hudFontSize
-               << "pt  } QListWidget::item { padding: 1 0 1 0; margin: 0; background-color: transparent } "
-               << "QListWidget::item:selected { border-radius: "
-               << listSelectionBorderRadius
-               << "; color: "
-               << hudSelectionFgString
-               << "; background-color: "
-               << hudSelectionBgString
-               << " } "
-            ;
-    }
-
-    QString hudScrollBarRadius = "4px";
-
-    if (InterfaceStyleSquare == appSettings->getInterfaceStyle())
-    {
-        hudScrollBarRadius = "0px";
-    }
-
-    stream << "QLabel { border: 0; padding: 0; margin: 0; background-color: transparent; "
-           << "font-size: "
-           << hudFontSize
-           << "pt; color: "
-           << hudFgString
-           << " } "
-           << "QScrollBar::horizontal { border: 0; background: transparent; height: 8px; margin: 0 } "
-           << "QScrollBar::handle:horizontal { border: 0; background: "
-           << hudFgString
-           << "; min-width: 20px; border-radius: "
-           << hudScrollBarRadius
-           << "; } "
-           << "QScrollBar::vertical { border: 0; background: transparent; width: 8px; margin: 0 } "
-           << "QScrollBar::handle:vertical { border: 0; background: "
-           << hudFgString
-           << "; min-height: 20px; border-radius: "
-           << hudScrollBarRadius
-           << "; } "
-           << "QScrollBar::add-line { background: transparent; border: 0 } "
-           << "QScrollBar::sub-line { background: transparent; border: 0 } "
-           << "QAbstractScrollArea::corner { background: transparent } "
-        ;
-
-    QColor alphaHudBackgroundColor = theme.getHudBackgroundColor();
-    alphaHudBackgroundColor.setAlpha(appSettings->getHudOpacity());
-
-    foreach (HudWindow* hud, huds)
-    {
-        // Clear style sheet cache for each HUD.
-        hud->setStyleSheet("");
-
-        // Set HUD colors.
-        hud->setForegroundColor(theme.getHudForegroundColor());
-        hud->setBackgroundColor(alphaHudBackgroundColor);
+        w->setStyleSheet(styler.getStatusBarWidgetsStyleSheet());
     }
 
     // Clear style sheet cache by setting to empty string before
     // setting the new style sheet.
     //
-    outlineWidget->setStyleSheet("");
-    outlineWidget->setStyleSheet(styleSheet);
+    //outlineWidget->setStyleSheet("");
+    //outlineWidget->setStyleSheet(styler.getSidebarWidgetStyleSheet());
     cheatSheetWidget->setStyleSheet("");
-    cheatSheetWidget->setStyleSheet(styleSheet);
+    cheatSheetWidget->setStyleSheet(styler.getSidebarWidgetStyleSheet());
     documentStatsWidget->setStyleSheet("");
-    documentStatsWidget->setStyleSheet(styleSheet);
+    documentStatsWidget->setStyleSheet(styler.getSidebarWidgetStyleSheet());
     sessionStatsWidget->setStyleSheet("");
-    sessionStatsWidget->setStyleSheet(styleSheet);
+    sessionStatsWidget->setStyleSheet(styler.getSidebarWidgetStyleSheet());
 
     adjustEditorWidth(this->width());
 }
 
-// Lifted from FocusWriter's theme.cpp file
-void MainWindow::predrawBackgroundImage()
-{
-    qreal dpr = 1.0;
-
-#if QT_VERSION >= 0x050600
-    dpr = this->devicePixelRatioF();
-#endif
-
-    QPixmap image(originalBackgroundImage);
-
-#if QT_VERSION >= 0x050600
-    image.setDevicePixelRatio(dpr);
-#endif
-
-    adjustedBackgroundImage =
-        QPixmap
-        (
-            this->size() * dpr
-        );
-
-#if QT_VERSION >= 0x050600
-    adjustedBackgroundImage.setDevicePixelRatio(dpr);
-#endif
-
-    adjustedBackgroundImage.fill(theme.getBackgroundColor().rgb());
-
-    QPainter painter(&adjustedBackgroundImage);
-    painter.setPen(Qt::NoPen);
-
-    if (PictureAspectTile == theme.getBackgroundImageAspect())
-    {
-        qreal inverseRatio = 1.0 / dpr;
-
-        painter.scale(inverseRatio, inverseRatio);
-        painter.fillRect
-        (
-            adjustedBackgroundImage.rect(),
-            image
-        );
-    }
-    else
-    {
-        Qt::AspectRatioMode aspectRatioMode = Qt::IgnoreAspectRatio;
-        bool scaleImage = true;
-
-        switch (theme.getBackgroundImageAspect())
-        {
-            case PictureAspectZoom:
-                aspectRatioMode = Qt::KeepAspectRatioByExpanding;
-                break;
-            case PictureAspectScale:
-                aspectRatioMode = Qt::KeepAspectRatio;
-                break;
-            case PictureAspectStretch:
-                aspectRatioMode = Qt::IgnoreAspectRatio;
-                break;
-            default:
-                // Centered
-                scaleImage = false;
-                break;
-        }
-
-        if (scaleImage)
-        {
-            image = image.scaled
-                (
-                    adjustedBackgroundImage.size(),
-                    aspectRatioMode,
-                    Qt::SmoothTransformation
-                );
-
-#if QT_VERSION >= 0x050600
-            image.setDevicePixelRatio(dpr);
-#endif
-        }
-
-        int xpos = (adjustedBackgroundImage.width() - image.width()) / (2.0 * dpr);
-        int ypos = (adjustedBackgroundImage.height() - image.height()) / (2.0 * dpr);
-
-        painter.drawPixmap
-        (
-            xpos,
-            ypos,
-            image
-        );
-    }
-
-    painter.end();
-}
-
 void MainWindow::showMenuBar()
 {
-    // Protect against the menu bar being set to a height of zero.
-    if (menuBarHeight > 0)
-    {
-        // Restore the menu bar to its original height to make
-        // it visible.
-        //
-        this->menuBar()->setFixedHeight(menuBarHeight);
-    }
+    this->menuBar()->setVisible(true);
 }
 
 void MainWindow::hideMenuBar()
@@ -2504,7 +1911,7 @@ void MainWindow::hideMenuBar()
     // case this method is mistakenly called twice in
     // succession.
     //
-    if (this->menuBar()->height() > 0)
+    //if (this->menuBar()->height() > 0)
     {
         // Store the menu bar height while it was visible.
         menuBarHeight = this->menuBar()->height();
@@ -2514,12 +1921,12 @@ void MainWindow::hideMenuBar()
     // we can't call menuBar()->hide() because that will disable
     // the application shortcut keys in Qt 5.
     //
-    this->menuBar()->setFixedHeight(0);
+    this->menuBar()->setVisible(false);
 }
 
 bool MainWindow::isMenuBarVisible() const
 {
-    return (this->menuBar()->height() > 0);
+    return this->menuBar()->isVisible();
 }
 
 void MainWindow::setOpenHudsVisibility(bool visible)

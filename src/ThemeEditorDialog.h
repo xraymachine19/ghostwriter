@@ -1,6 +1,6 @@
 /***********************************************************************
  *
- * Copyright (C) 2014, 2015 wereturtle
+ * Copyright (C) 2014-2020 wereturtle
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -65,20 +65,13 @@ class ThemeEditorDialog : public QDialog
 
     private:
         QLineEdit* themeNameEdit;
-        QComboBox* editorAspectComboBox;
-        QComboBox* pictureAspectComboBox;
         ColorButton* textColorButton;
         ColorButton* markupColorButton;
         ColorButton* linkColorButton;
         ColorButton* emphasisColorButton;
         ColorButton* blockTextColorButton;
-        ColorButton* spellcheckColorButton;
-        ColorButton* editorBackgroundColorButton;
-        ColorButton* hudForegroundColorButton;
-        ColorButton* hudBackgroundColorButton;
-        ImageButton* backgroundImageButton;
+        ColorButton* spellcheckColorButton;;
         ColorButton* backgroundColorButton;
-        QSlider* editorOpacitySlider;
 
         Theme theme;
         QString oldThemeName;

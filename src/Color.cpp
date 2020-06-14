@@ -1,6 +1,6 @@
 /***********************************************************************
  *
- * Copyright (C) 2014, 2015 wereturtle
+ * Copyright (C) 2014-2020 wereturtle
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,19 +20,29 @@
 #include <QColor>
 #include <QString>
 
-#include "ColorHelper.h"
+#include "Color.h"
 
-QColor ColorHelper::applyAlpha(const QColor& foreground, const QColor& background)
+Color::Color(const QColor& color) : QColor(color)
 {
-    QColor blendedColor(0, 0, 0);
+    ;
+}
+
+// Color::Color(const Color& color) : QColor(color)
+// {
+//     ;
+// }
+
+Color Color::applyAlpha(const Color& background) const
+{
+    Color blendedColor(0, 0, 0);
 
     blendedColor.setRed
     (
         applyAlphaToChannel
         (
-            foreground.red(),
+            this->red(),
             background.red(),
-            foreground.alphaF()
+            this->alphaF()
         )
     );
 
@@ -40,9 +50,9 @@ QColor ColorHelper::applyAlpha(const QColor& foreground, const QColor& backgroun
     (
         applyAlphaToChannel
         (
-            foreground.green(),
+            this->green(),
             background.green(),
-            foreground.alphaF()
+            this->alphaF()
         )
     );
 
@@ -50,21 +60,20 @@ QColor ColorHelper::applyAlpha(const QColor& foreground, const QColor& backgroun
     (
         applyAlphaToChannel
         (
-            foreground.blue(),
+            this->blue(),
             background.blue(),
-            foreground.alphaF()
+            this->alphaF()
         )
     );
 
     return blendedColor;
 }
 
-QColor ColorHelper::applyAlpha
+Color Color::applyAlpha
 (
-    const QColor& foreground,
-    const QColor& background,
+    const Color& background,
     int alpha
-)
+) const
 {
     if ((alpha < 0) || alpha > 255)
     {
@@ -73,14 +82,14 @@ QColor ColorHelper::applyAlpha
             alpha);
     }
 
-    QColor blendedColor(0, 0, 0);
+    Color blendedColor(0, 0, 0);
     qreal normalizedAlpha = alpha / 255.0;
 
     blendedColor.setRed
     (
         applyAlphaToChannel
         (
-            foreground.red(),
+            this->red(),
             background.red(),
             normalizedAlpha
         )
@@ -90,7 +99,7 @@ QColor ColorHelper::applyAlpha
     (
         applyAlphaToChannel
         (
-            foreground.green(),
+            this->green(),
             background.green(),
             normalizedAlpha
         )
@@ -100,7 +109,7 @@ QColor ColorHelper::applyAlpha
     (
         applyAlphaToChannel
         (
-            foreground.blue(),
+            this->blue(),
             background.blue(),
             normalizedAlpha
         )
@@ -110,21 +119,21 @@ QColor ColorHelper::applyAlpha
 }
 
 
-QString ColorHelper::toRgbString(const QColor& color)
+QString Color::toRgbString() const
 {
     return QString("rgb(%1, %2, %3)")
-        .arg(color.red())
-        .arg(color.green())
-        .arg(color.blue());
+        .arg(this->red())
+        .arg(this->green())
+        .arg(this->blue());
 }
 
-QString ColorHelper::toRgbaString(const QColor& color)
+QString Color::toRgbaString() const
 {
     return QString("rgba(%1, %2, %3, %4)")
-        .arg(color.red())
-        .arg(color.green())
-        .arg(color.blue())
-        .arg(color.alpha());
+        .arg(this->red())
+        .arg(this->green())
+        .arg(this->blue())
+        .arg(this->alpha());
 }
 
 // Algorithm taken from *Grokking the GIMP* by Carey Bunks,
@@ -135,12 +144,12 @@ QString ColorHelper::toRgbaString(const QColor& color)
 // Copyright (c) 2000 by New Riders Publishing, www.newriders.com
 // ISBN 0-7357-0924-6.
 //
-double ColorHelper::getLuminance(const QColor& color)
+double Color::getLuminance() const
 {
-    QColor c = color;
+    Color c = *this;
 
     // Ensure color is non-zero.
-    if (c == QColor(Qt::black))
+    if (c == Color(Qt::black))
     {
         c.setRgb(1, 1, 1);
     }
@@ -148,15 +157,14 @@ double ColorHelper::getLuminance(const QColor& color)
     return (0.30 * c.redF()) + (0.59 * c.greenF()) + (0.11 * c.blueF());
 }
 
-QColor ColorHelper::lightenToMatchContrastRatio
+Color Color::lightenToMatchContrastRatio
 (
-    const QColor& foreground,
-    const QColor& background,
+    const Color& background,
     double contrastRatio
-)
+) const
 {
-    double fgBrightness = getLuminance(foreground);
-    double bgBrightness = getLuminance(background);
+    double fgBrightness = this->getLuminance();
+    double bgBrightness = background.getLuminance();
 
     // If the background color is brighter than the foreground color...
     if (bgBrightness > fgBrightness)
@@ -164,7 +172,7 @@ QColor ColorHelper::lightenToMatchContrastRatio
         double actualContrastRatio = bgBrightness / fgBrightness;
         double colorFactor = contrastRatio / actualContrastRatio;
 
-        QColor result = foreground;
+        Color result = *this;
 
         // Ensure color is non-zero.
         if (result == QColor(Qt::black))
@@ -198,9 +206,9 @@ QColor ColorHelper::lightenToMatchContrastRatio
     else
     {
         // This algorithm cannot change the foreground color when it is
-        // lighter than the background color, so return the original
-        // foreground color.
+        // lighter than the background color, so return this color's
+        // original value.
         //
-        return foreground;
+        return *this;
     }
 }

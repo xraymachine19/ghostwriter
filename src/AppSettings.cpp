@@ -1,6 +1,6 @@
 /***********************************************************************
  *
- * Copyright (C) 2014-2016 wereturtle
+ * Copyright (C) 2014-2020 wereturtle
  * Copyright (C) 2008, 2009, 2010, 2011, 2012, 2013, 2014 Graeme Gott <graeme@gottcode.org>
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,17 +19,17 @@
  ***********************************************************************/
 
 #include <QApplication>
+#include <QDebug>
 #include <QDir>
+#include <QFontDatabase>
+#include <QFontInfo>
 #include <QLocale>
 #include <QSettings>
-#include <QFontInfo>
-#include <QFontDatabase>
 #include <QStringList>
-#include <QDebug>
 
 #include "AppSettings.h"
-#include "ExporterFactory.h"
 #include "dictionary_manager.h"
+#include "ExporterFactory.h"
 
 #define GW_AUTOSAVE_KEY "Save/autoSave"
 #define GW_BACKUP_FILE_KEY "Save/backupFile"

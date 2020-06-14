@@ -1,6 +1,6 @@
 /***********************************************************************
  *
- * Copyright (C) 2014, 2015 wereturtle
+ * Copyright (C) 2014-2020 wereturtle
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,34 +20,16 @@
 #ifndef THEME_H
 #define THEME_H
 
+#include <QMap>
 #include <QString>
-#include <QColor>
 
-enum EditorAspect
-{
-    EditorAspectFirst,
-    EditorAspectStretch = EditorAspectFirst,
-    EditorAspectCenter,
-    EditorAspectLast = EditorAspectCenter
-};
+#include "Color.h"
 
 enum TextWidth
 {
     TextWidthNarrow,
     TextWidthMedium,
     TextWidthWide
-};
-
-enum PictureAspect
-{
-    PictureAspectFirst,
-    PictureAspectNone = PictureAspectFirst,
-    PictureAspectTile,
-    PictureAspectCenter,
-    PictureAspectStretch,
-    PictureAspectScale,
-    PictureAspectZoom,
-    PictureAspectLast = PictureAspectZoom,
 };
 
 /**
@@ -57,8 +39,11 @@ class Theme
 {
     public:
         Theme();
+        Theme(const Theme& other);
         Theme(const QString& name, bool builtIn = true);
         ~Theme();
+
+        Theme& operator=(const Theme& other);
 
         QString getName() const;
         void setName(const QString& value);
@@ -66,74 +51,46 @@ class Theme
         bool isBuiltIn() const;
         void setBuiltIn(const bool builtIn);
 
-        QColor getDefaultTextColor() const;
-        void setDefaultTextColor(const QColor& value);
+        static QStringList getColorKeys();
 
-        QColor getMarkupColor() const;
-        void setMarkupColor(const QColor& value);
+        Color getColorByKey(const QString& key);
+        void setColorByKey(const QString& key, const Color& value);
 
-        QColor getLinkColor() const;
-        void setLinkColor(const QColor& value);
+        Color getDefaultTextColor() const;
+        void setDefaultTextColor(const Color& value);
 
-        QColor getHeadingColor() const;
-        void setHeadingColor(const QColor& value);
+        Color getBackgroundColor() const;
+        void setBackgroundColor(const Color& value);
 
-        QColor getEmphasisColor() const;
-        void setEmphasisColor(const QColor& value);
+        Color getMarkupColor() const;
+        void setMarkupColor(const Color& value);
 
-        QColor getBlockquoteColor() const;
-        void setBlockquoteColor(const QColor& value);
+        Color getLinkColor() const;
+        void setLinkColor(const Color& value);
 
-        QColor getCodeColor() const;
-        void setCodeColor(const QColor& value);
+        Color getHeadingColor() const;
+        void setHeadingColor(const Color& value);
 
-        QColor getSpellingErrorColor() const;
-        void setSpellingErrorColor(const QColor& value);
+        Color getEmphasisColor() const;
+        void setEmphasisColor(const Color& value);
 
-        EditorAspect getEditorAspect() const;
-        void setEditorAspect(const EditorAspect value);
+        Color getBlockquoteColor() const;
+        void setBlockquoteColor(const Color& value);
 
-        PictureAspect getBackgroundImageAspect() const;
-        void setBackgroundImageAspect(const PictureAspect value);
+        Color getCodeColor() const;
+        void setCodeColor(const Color& value);
 
-        QString getBackgroundImageUrl() const;
-        void setBackgroundImageUrl(const QString& value);
-
-        QColor getBackgroundColor() const;
-        void setBackgroundColor(const QColor& value);
-
-        QColor getEditorBackgroundColor() const;
-        void setEditorBackgroundColor(const QColor& value);
-
-        QColor getHudForegroundColor() const;
-        void setHudForegroundColor(const QColor& value);
-
-        QColor getHudBackgroundColor() const;
-        void setHudBackgroundColor(const QColor& value);
+        Color getSpellingErrorColor() const;
+        void setSpellingErrorColor(const Color& value);
 
     private:
+        const static QStringList keyArray;
         QString name;
 
         // true if theme is built-in, false if custom (i.e., user-created).
         bool builtInFlag;
 
-        QColor defaultTextColor;
-        QColor editorBackgroundColor;
-        QColor markupColor;
-        QColor linkColor;
-        QColor headingColor;
-        QColor emphasisColor;
-        QColor blockquoteColor;
-        QColor codeColor;
-        QColor spellingErrorColor;
-
-        EditorAspect editorAspect;
-        PictureAspect backgroundImageAspect;
-        QString backgroundImageUrl;
-        QColor backgroundColor;
-
-        QColor hudForegroundColor;
-        QColor hudBackgroundColor;
+        QMap<QString, Color> colors;
 };
 
 #endif

@@ -1,6 +1,6 @@
 /***********************************************************************
  *
- * Copyright (C) 2014, 2015 wereturtle
+ * Copyright (C) 2014-2020 wereturtle
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,86 +17,96 @@
  *
  ***********************************************************************/
 
-#ifndef COLORHELPER_H
-#define COLORHELPER_H
+#ifndef COLOR_H
+#define COLOR_H
 
-class QColor;
-class QString;
+#include <QColor>
+#include <QString>
 
 /**
- * Helper class for dealing with colors.
+ * Helper class for dealing with colors that inherits QColor
+ * to add additional functionality.
  */
-class ColorHelper
+class Color : public QColor
 {
     public:
-        /**
-         * Applies an alpha effect to the given foreground color against the
-         * given background color, returning a blend of the two colors.  In
-         * other words, new color returned will have foreground color appearing
-         * to be transparent or semi-transparent as though it were colored
-         * on top of the background color.  The alpha value used is from
-         * the foreground color's alpha() channel.
-         */
-        static QColor applyAlpha
-        (
-            const QColor& foreground,
-            const QColor& background
-        );
+        using QColor::QColor;
 
         /**
-         * Applies an alpha effect to the given foreground color against the
+         * Constructor taking a QColor as a parameter.
+         */
+        Color(const QColor& color);
+
+        // /**
+        //  * Copy constructor.
+        //  */
+        // Color(const Color& color);
+
+        /**
+         * Applies an alpha effect to this foreground color against the
          * given background color, returning a blend of the two colors.  In
-         * other words, new color returned will have foreground color appearing
+         * other words, new color returned will have this color appearing
+         * to be transparent or semi-transparent as though it were colored
+         * on top of the background color.  The alpha value used is from
+         * this color's alpha() channel.
+         */
+        Color applyAlpha
+        (
+            const Color& background
+        ) const;
+
+        /**
+         * Applies an alpha effect to this foreground color against the
+         * given background color, returning a blend of the two colors.  In
+         * other words, new color returned will have this color appearing
          * to be transparent or semi-transparent as though it were colored
          * on top of the background color.  The alpha value used is from
          * the alpha parameter passed in, and will be applied to all channels.
          *
          * alpha parameter must be within the range of 0 to 255.
          */
-        static QColor applyAlpha
+        Color applyAlpha
         (
-            const QColor& foreground,
-            const QColor& background,
+            const Color& background,
             int alpha
-        );
+        ) const;
 
         /**
-         * Gets string representation of the given color in RGB format for
+         * Gets string representation of this color in RGB format for
          * use in style sheets.
          */
-         static QString toRgbString(const QColor& color);
+         QString toRgbString() const;
 
         /**
-         * Gets string representation of the given color in RGBA format for
+         * Gets string representation of this color in RGBA format for
          * use in style sheets.
          */
-         static QString toRgbaString(const QColor& color);
+         QString toRgbaString() const;
 
         /**
-         * Returns luminance of the given color on a scale of 0.0 (dark) to
+         * Returns the luminance of this color on a scale of 0.0 (dark) to
          * 1.0 (light).  Luminance is based on how light or dark a color
          * appears to the human eye.
          */
-        static double getLuminance(const QColor& color);
+        double getLuminance() const;
 
         /**
-         * Returns a new color based on the given foreground color,
+         * Returns a new color based on this foreground color,
          * such that the new color is lightened to achieve the desired
          * contrast ratio against the given background color.
          *
          * Note:
          *
-         *   This method assumes that the foreground color is darker
-         *   than the background color.  Passing in a foreground color
-         *   that is lighter than the background color results in
-         *   the original foreground color being returned.
+         *   This method assumes that this foreground color is darker
+         *   than the background color.  Passing in a background color
+         *   that is darker than this color results in
+         *   this original color being returned.
          */
-        static QColor lightenToMatchContrastRatio
+        Color lightenToMatchContrastRatio
         (
-            const QColor& foreground,
-            const QColor& background,
+            const Color& background,
             double contrastRatio
-        );
+        ) const;
 
     private:
         /**
@@ -116,4 +126,4 @@ class ColorHelper
         }
 };
 
-#endif // ALPHACOLOREFFECT_H
+#endif // COLOR_H
