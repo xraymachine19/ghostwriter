@@ -135,6 +135,7 @@ HEADERS += \
     src/SandboxedWebPage.h \
     src/SessionStatistics.h \
     src/SessionStatisticsWidget.h \
+    src/Sidebar.h \
     src/SimpleFontDialog.h \
     src/StringObserver.h \
     src/StyleSheetBuilder.h \
@@ -219,6 +220,7 @@ SOURCES += \
     src/SandboxedWebPage.cpp \
     src/SessionStatistics.cpp \
     src/SessionStatisticsWidget.cpp \
+    src/Sidebar.cpp \
     src/SimpleFontDialog.cpp \
     src/StringObserver.cpp \
     src/StyleSheetBuilder.cpp \

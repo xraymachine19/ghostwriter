@@ -1,6 +1,6 @@
 /***********************************************************************
  *
- * Copyright (C) 2014-2019 wereturtle
+ * Copyright (C) 2014-2020 wereturtle
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,37 +22,29 @@
 
 #include <QAction>
 #include <QGraphicsColorizeEffect>
-#include <QGraphicsDropShadowEffect>
 #include <QLabel>
 #include <QMainWindow>
 #include <QMenu>
 #include <QObject>
-#include <QTabWidget>
 #include <QWidget>
 
 #include "AppSettings.h"
 #include "find_dialog.h"
 #include "HtmlPreview.h"
-#include "HtmlPreview.h"
 #include "MarkdownEditor.h"
-#include "spelling/dictionary_manager.h"
 #include "ThemeFactory.h"
 #include "TimeLabel.h"
 
 #define MAX_RECENT_FILES 10
 
-class HudWindow;
-class QSettings;
-class QFileSystemWatcher;
-class QTextBrowser;
-class QCheckBox;
-class QListWidget;
 class DocumentManager;
-class Outline;
 class DocumentStatistics;
 class DocumentStatisticsWidget;
+class Outline;
+class QListWidget;
 class SessionStatistics;
 class SessionStatisticsWidget;
+class Sidebar;
 
 /**
  * Main window for the application.
@@ -85,26 +77,15 @@ class MainWindow : public QMainWindow
         void toggleOutlineAlternateRowColors(bool checked);
         void toggleFileHistoryEnabled(bool checked);
         void toggleDisplayTimeInFullScreen(bool checked);
-        void toggleDesktopCompositingEffects(bool checked);
-        void toggleOpenHudsVisibility();
-        void toggleOpenHudsVisibility(bool checked);
-        void changeHudButtonLayout(HudWindowButtonLayout layout);
         void changeEditorWidth(EditorWidth editorWidth);
         void changeInterfaceStyle(InterfaceStyle style);
         void insertImage();
         void showStyleSheetManager();
         void showQuickReferenceGuide();
         void showWikiPage();
-        void showOutlineHud();
-        void showCheatSheetHud();
-        void showDocumentStatisticsHud();
-        void showSessionStatisticsHud();
-        void onHideHudsOnPreviewChanged(bool enabled);
-        void onHudClosed();
-        void onTypingPaused();
-        void onTypingResumed();
         void showAbout();
         void updateWordCount(int newWordCount);
+        void updateWordsPerMinute(int wpm);
         void changeFocusMode(FocusMode focusMode);
         void applyTheme(const Theme& theme);
         void openRecentFile();
@@ -116,7 +97,6 @@ class MainWindow : public QMainWindow
         void changeFont();
         void onFontSizeChanged(int size);
         void onSetLocale();
-        void changeHudOpacity(int value);
         void copyHtml();
         void showPreviewOptions();
         void onAboutToHideMenuBarMenu();
@@ -124,13 +104,16 @@ class MainWindow : public QMainWindow
 
 	private:
         MarkdownEditor* editor;
-        QSplitter* splitter;
+        QWidget* statusBar;
+        QSplitter* editorSplitter;
+        QSplitter* sidebarSplitter;
         DocumentManager* documentManager;
         ThemeFactory* themeFactory;
         Theme theme;
         QString language;
-        QTabWidget* sidebar;
+        Sidebar* sidebar;
         QLabel* wordCountLabel;
+        QLabel* wpmLabel;
         QLabel* statusLabel;
         TimeLabel* timeLabel;
         QPushButton* previewOptionsButton;
@@ -139,33 +122,22 @@ class MainWindow : public QMainWindow
         QPushButton* hemingwayModeButton;
         QPushButton* focusModeButton;
         QPushButton* htmlPreviewButton;
-        QPushButton* hideOpenHudsButton;
         FindDialog* findReplaceDialog;
         HtmlPreview* htmlPreview;
         QWebEngineView* quickReferenceGuideViewer;
         QAction* htmlPreviewMenuAction;
         QAction* fullScreenMenuAction;
         QPushButton* fullScreenButton;
-        HudWindow* outlineHud;
         Outline* outlineWidget;
-        HudWindow* cheatSheetHud;
-        HudWindow* documentStatsHud;
-        HudWindow* sessionStatsHud;
-        QVector<HudWindow*> huds;
-        QVector<HudWindow*> openHuds;
-        QVector<QString> hudGeometryKeys;
-        QVector<QString> hudOpenKeys;
-        bool openHudsVisible;
-        QAction* hideOpenHudsAction;
         DocumentStatistics* documentStats;
         DocumentStatisticsWidget* documentStatsWidget;
         SessionStatistics* sessionStats;
         SessionStatisticsWidget* sessionStatsWidget;
         QListWidget* cheatSheetWidget;
         QAction* recentFilesActions[MAX_RECENT_FILES];
-        int menuBarHeight;
         QPoint lastMousePos;
         bool menuBarMenuActivated;
+        int menuBarHeight;
 
         QList<QWidget*> statusBarButtons;
         QList<QWidget*> statusBarWidgets;
@@ -182,24 +154,15 @@ class MainWindow : public QMainWindow
             QActionGroup* actionGroup = 0
         );
 
-        HudWindow* createHudWindow
-        (
-            const QString& title,
-            QWidget* centralWidget,
-            const QString& geometrySettingsKey,
-            const QString& openSettingsKey
-        );
-
         void buildMenuBar();
-        void buildStatusBar();
+        QWidget* buildStatusBar();
+        void buildSidebar();
 
-        void showHud(HudWindow* hud);
         void adjustEditorWidth(int width);
         void applyTheme();
         void showMenuBar();
         void hideMenuBar();
         bool isMenuBarVisible() const;
-        void setOpenHudsVisibility(bool visible);
 };
 
 #endif

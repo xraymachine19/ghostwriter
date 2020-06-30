@@ -49,7 +49,6 @@ class PreferencesDialog : public QDialog
         void onBlockquoteStyleChanged(int index);
         void onEmphasisStyleChanged(int index);
         void onDictionaryChanged(int index);
-        void onHudWindowButtonLayoutChanged(int index);
         void showAutoMatchFilterDialog();
 
     private:
@@ -58,7 +57,6 @@ class PreferencesDialog : public QDialog
         QWidget* initializeGeneralTab();
         QWidget* initializeEditorTab();
         QWidget* initializeSpellCheckTab();
-        QWidget* initializeHudTab();
 
         QString languageName(const QString& language);
 };

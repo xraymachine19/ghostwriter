@@ -334,6 +334,7 @@ void ThemeFactory::loadClassicLightTheme()
     Theme theme(CLASSIC_LIGHT_THEME_NAME);
     theme.setBackgroundColor("#eff0f1");
     theme.setDefaultTextColor("#31363b");
+    theme.setSelectionColor("#E6E7E8");
     theme.setMarkupColor("#bdc3c7");
     theme.setLinkColor("#2980b9");
     theme.setHeadingColor("#31363b");
@@ -351,6 +352,7 @@ void ThemeFactory::loadClassicDarkTheme()
     Theme theme(CLASSIC_DARK_THEME_NAME);
     theme.setBackgroundColor("#151719");
     theme.setDefaultTextColor("#bdc3c7");
+    theme.setSelectionColor("#26282a");
     theme.setMarkupColor("#575b5f");
     theme.setLinkColor("#5f8eb1");
     theme.setHeadingColor("#bdc3c7");
@@ -368,6 +370,7 @@ void ThemeFactory::loadPlainstractionLightTheme()
     Theme theme(PLAINSTRACTION_LIGHT_THEME_NAME);
     theme.setBackgroundColor("#ffffff");
     theme.setDefaultTextColor("#1d2023");
+    theme.setSelectionColor("#e8e9ea");
     theme.setMarkupColor("#c4e4f1");
     theme.setLinkColor("#c23184");
     theme.setHeadingColor("#009bc8");
@@ -385,6 +388,7 @@ void ThemeFactory::loadPlainstractionDarkTheme()
     Theme theme(PLAINSTRACTION_DARK_THEME_NAME);
     theme.setBackgroundColor("#141414");
     theme.setDefaultTextColor("#c7cfd0");
+    theme.setSelectionColor("#1c242a");
     theme.setMarkupColor("#074051");
     theme.setLinkColor("#b31771");
     theme.setHeadingColor("#009bc8");

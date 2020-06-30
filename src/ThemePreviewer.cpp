@@ -1,6 +1,6 @@
 /***********************************************************************
  *
- * Copyright (C) 2014-2018 wereturtle
+ * Copyright (C) 2014-2020 wereturtle
  * Copyright (C) 2009, 2010, 2011, 2012, 2013, 2014 Graeme Gott <graeme@gottcode.org>
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,16 +20,85 @@
 
 #include "ThemePreviewer.h"
 
+#include <QImage>
 #include <QPainter>
 #include <QPixmap>
-#include <QImage>
+#include <QSvgRenderer>
+#include <QTextEdit>
 
-ThemePreviewer::ThemePreviewer(const Theme& theme, int width, int height)
+const QString ThemePreviewer::loremIpsum = 
+    "<p><h2><strong>"
+    "<font color='@markup'># </font>"
+    "<font color='@strong'>Lorem ipsum</font></strong></h2></p>"
+    "<p>Lorem ipsum "
+    "<em>"
+    "<font color='@markup'>*</font>"
+    "<font color='@emph'>dolor</font>"
+    "<font color='@markup'>*</font>"
+    "</em> "
+    "sit amet, "
+    "<strong>"
+    "<font color='@markup'>**</font>"
+    "<font color='@strong'>consectetur</font>"
+    "<font color='@markup'>**</font>"
+    "</strong> "
+    "adipiscing "
+    "<font color='@link'>[elit][^1]</font>. "
+    "Etiam "
+    "<font color='@markup'>`</font>"
+    "<font color='@code'>aliquam</font>"
+    "<font color='@markup'>`</font>, "
+    "diam.</p>";
+
+ThemePreviewer::ThemePreviewer(const Theme& theme, int width, int height, qreal dpr)
 {
-    this->width = width;
-    this->height = height;
+    QString text = loremIpsum;
 
-    renderPreview(theme);
+    text.replace("@markup", theme.getMarkupColor().name());
+    text.replace("@emph", theme.getEmphasisColor().name());
+    text.replace("@strong", theme.getEmphasisColor().name());
+    text.replace("@link", theme.getLinkColor().name());
+    text.replace("@code", theme.getCodeColor().name());
+ 
+    QTextEdit textEdit;
+    textEdit.setHtml(text);
+    textEdit.setFrameStyle(QFrame::NoFrame);
+	textEdit.setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+	textEdit.setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    textEdit.setFixedSize(width, height);
+    textEdit.setStyleSheet
+    (
+        "QTextEdit { color: "
+        + theme.getDefaultTextColor().toRgbString() 
+        + "; background-color: " 
+        + theme.getBackgroundColor().toRgbString() 
+        + "; font-family: monospace; font-size: 14pt }"
+    );
+
+    QPixmap thumbnailPixmap(width * dpr, height * dpr);
+    thumbnailPixmap.setDevicePixelRatio(dpr);
+    QPainter painter(&thumbnailPixmap);
+    painter.setRenderHints(QPainter::Antialiasing);
+    textEdit.render(&painter);
+    
+    // Draw icon to indicate if theme is built-in
+    if (theme.isBuiltIn())
+    {
+        int w = width / 10;
+        int h = w;
+        int x = width - w - 2;
+        int y = height - h - 2;
+
+        QSvgRenderer renderer(QString(":/resources/images/ghostwriter.svg"));
+        QImage builtInIcon(w * dpr, h * dpr, QImage::Format_ARGB32);
+        builtInIcon.setDevicePixelRatio(dpr);
+        builtInIcon.fill(Qt::transparent);
+        renderer.render(&painter, QRectF(x, y, w, h));
+        
+    }
+
+    painter.end();
+    thumbnailPreviewIcon = thumbnailPixmap;
 }
 
 ThemePreviewer::~ThemePreviewer()
@@ -40,63 +109,4 @@ ThemePreviewer::~ThemePreviewer()
 QIcon ThemePreviewer::getIcon()
 {
     return thumbnailPreviewIcon;
-}
-
-void ThemePreviewer::renderPreview(const Theme& newSettings)
-{
-    this->theme = newSettings;
-
-    QPixmap thumbnailPixmap(this->width, this->height);
-    QPainter painter(&thumbnailPixmap);
-    painter.setRenderHint(QPainter::Antialiasing);
-
-    // First, draw the editor "background".
-    painter.fillRect
-    (
-        thumbnailPixmap.rect(),
-        theme.getBackgroundColor()
-    );
-
-    // Now draw a circle in the background for each of the text colors.
-    int w = 2 * width / 3;
-    int h = height / 4;
-    int x = (width / 3) - 3;
-    int y = ((3 * height) / 4) - 3;
-    int radius = (h / 4);
-    int xoffset = w / 3;
-    int cx1 = x + (xoffset / 2);
-    int cx2 = cx1 + xoffset;
-    int cx3 = cx2 + xoffset;
-    int cy = y + (h / 2);
-
-    painter.setPen(Qt::NoPen);
-    painter.setBrush(QBrush(theme.getDefaultTextColor()));
-    painter.drawEllipse(QPoint(cx1, cy), radius, radius);
-    painter.setBrush(QBrush(theme.getMarkupColor()));
-    painter.drawEllipse(QPoint(cx2, cy), radius, radius);
-    painter.setBrush(QBrush(theme.getLinkColor()));
-    painter.drawEllipse(QPoint(cx3, cy), radius, radius);
-
-    // Draw icon to indicate if theme is built-in
-    if (theme.isBuiltIn())
-    {
-        w = width / 10;
-        h = w;
-        x = w / 4;
-        y = x;
-
-        painter.drawImage
-        (
-            x,
-            y,
-            QImage(":/resources/images/ghostwriter.svg").scaled
-            (
-                QSize(w, h),
-                Qt::KeepAspectRatioByExpanding,
-                Qt::SmoothTransformation
-            )
-        );
-    }
-    painter.end();
-    thumbnailPreviewIcon = QIcon(thumbnailPixmap);
 }

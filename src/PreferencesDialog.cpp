@@ -50,7 +50,6 @@ PreferencesDialog::PreferencesDialog(QWidget* parent)
     tabWidget->addTab(initializeGeneralTab(), tr("General"));
     tabWidget->addTab(initializeEditorTab(), tr("Editor"));
     tabWidget->addTab(initializeSpellCheckTab(), tr("Spell Check"));
-    tabWidget->addTab(initializeHudTab(), tr("HUD"));
 
     QDialogButtonBox* buttonBox = new QDialogButtonBox(Qt::Horizontal, this);
     buttonBox->addButton(QDialogButtonBox::Close);
@@ -103,12 +102,6 @@ void PreferencesDialog::onDictionaryChanged(int index)
 
     DictionaryManager::instance().setDefaultLanguage(language);
     appSettings->setDictionaryLanguage(language);
-}
-
-void PreferencesDialog::onHudWindowButtonLayoutChanged(int index)
-{
-    QComboBox* combo = (QComboBox*) sender();
-    appSettings->setHudButtonLayout((HudWindowButtonLayout) combo->itemData(index).toInt());
 }
 
 void PreferencesDialog::showAutoMatchFilterDialog()
@@ -407,55 +400,6 @@ QWidget* PreferencesDialog::initializeSpellCheckTab()
     dictionaryComboBox->setCurrentIndex(currentDictionaryIndex);
     connect(dictionaryComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(onDictionaryChanged(int)));
     languageGroupLayout->addRow(tr("Dictionary"), dictionaryComboBox);
-
-    return tab;
-}
-
-QWidget* PreferencesDialog::initializeHudTab()
-{
-    QWidget* tab = new QWidget();
-
-    QFormLayout* tabLayout = new QFormLayout();
-    tab->setLayout(tabLayout);
-
-    QComboBox* buttonLayoutCombo = new QComboBox();
-    buttonLayoutCombo->addItem(tr("Right"), HudWindowButtonLayoutRight);
-    buttonLayoutCombo->addItem(tr("Left"), HudWindowButtonLayoutLeft);
-    buttonLayoutCombo->setCurrentIndex((int) appSettings->getHudButtonLayout());
-
-    connect(buttonLayoutCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(onHudWindowButtonLayoutChanged(int)));
-    tabLayout->addRow(tr("Window button layout"), buttonLayoutCombo);
-
-    QCheckBox* alternateRowColorsCheckBox = new QCheckBox(tr("Alternate row colors"));
-    alternateRowColorsCheckBox->setCheckable(true);
-    alternateRowColorsCheckBox->setChecked(appSettings->getAlternateHudRowColorsEnabled());
-    connect(alternateRowColorsCheckBox, SIGNAL(toggled(bool)), appSettings, SLOT(setAlternateHudRowColorsEnabled(bool)));
-    tabLayout->addRow(alternateRowColorsCheckBox);
-
-    QCheckBox* compositingCheckBox = new QCheckBox(tr("Enable desktop compositing effects"));
-    compositingCheckBox->setCheckable(true);
-    compositingCheckBox->setChecked(appSettings->getDesktopCompositingEnabled());
-    connect(compositingCheckBox, SIGNAL(toggled(bool)), appSettings, SLOT(setDesktopCompositingEnabled(bool)));
-    tabLayout->addRow(compositingCheckBox);
-
-    QCheckBox* hideHudsWhenTypingCheckBox = new QCheckBox(tr("Auto-hide HUD windows when typing"));
-    hideHudsWhenTypingCheckBox->setCheckable(true);
-    hideHudsWhenTypingCheckBox->setChecked(appSettings->getHideHudsWhenTypingEnabled());
-    connect(hideHudsWhenTypingCheckBox, SIGNAL(toggled(bool)), appSettings, SLOT(setHideHudsWhenTypingEnabled(bool)));
-    tabLayout->addRow(hideHudsWhenTypingCheckBox);
-
-    QCheckBox* hideHudsOnPreviewCheckBox = new QCheckBox(tr("Auto-hide HUD windows when previewing HTML"));
-    hideHudsOnPreviewCheckBox->setCheckable(true);
-    hideHudsOnPreviewCheckBox->setChecked(appSettings->getHideHudsOnPreviewEnabled());
-    connect(hideHudsOnPreviewCheckBox, SIGNAL(toggled(bool)), appSettings, SLOT(setHideHudsOnPreviewEnabled(bool)));
-    tabLayout->addRow(hideHudsOnPreviewCheckBox);
-
-    QSlider* slider = new QSlider(Qt::Horizontal, this);
-    slider->setMinimum(0);
-    slider->setMaximum(255);
-    slider->setValue(appSettings->getHudOpacity());
-    connect(slider, SIGNAL(valueChanged(int)), appSettings, SLOT(setHudOpacity(int)));
-    tabLayout->addRow(tr("Opacity"), slider);
 
     return tab;
 }

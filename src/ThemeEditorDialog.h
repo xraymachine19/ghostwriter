@@ -66,6 +66,7 @@ class ThemeEditorDialog : public QDialog
     private:
         QLineEdit* themeNameEdit;
         ColorButton* textColorButton;
+        ColorButton* selectionColorButton;
         ColorButton* markupColorButton;
         ColorButton* linkColorButton;
         ColorButton* emphasisColorButton;

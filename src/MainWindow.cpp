@@ -61,8 +61,8 @@
 #include "Exporter.h"
 #include "ExporterFactory.h"
 #include "find_dialog.h"
+#include "FontAwesome.h"
 #include "HtmlPreview.h"
-#include "HudWindow.h"
 #include "LocaleDialog.h"
 #include "MainWindow.h"
 #include "MessageBoxHelper.h"
@@ -72,22 +72,25 @@
 #include "SandboxedWebPage.h"
 #include "SessionStatistics.h"
 #include "SessionStatisticsWidget.h"
+#include "Sidebar.h"
 #include "SimpleFontDialog.h"
 #include "StyleSheetBuilder.h"
 #include "StyleSheetManagerDialog.h"
 #include "ThemeFactory.h"
 #include "ThemeSelectionDialog.h"
 
+enum SidebarTabIndex
+{
+    FirstSidebarTab,
+    OutlineSidebarTab = FirstSidebarTab,
+    SessionStatsSidebarTab,
+    DocumentStatsSidebarTab,
+    CheatSheetSidebarTab,
+    LastSidebarTab = CheatSheetSidebarTab
+};
+
 #define GW_MAIN_WINDOW_GEOMETRY_KEY "Window/mainWindowGeometry"
 #define GW_MAIN_WINDOW_STATE_KEY "Window/mainWindowState"
-#define GW_OUTLINE_HUD_GEOMETRY_KEY "HUD/outlineHudGeometry"
-#define GW_CHEAT_SHEET_HUD_GEOMETRY_KEY "HUD/cheatSheetHudGeometry"
-#define GW_DOCUMENT_STATISTICS_HUD_GEOMETRY_KEY "HUD/documentStatisticsHudGeometry"
-#define GW_SESSION_STATISTICS_HUD_GEOMETRY_KEY "HUD/sessionStatisticsHudGeometry"
-#define GW_OUTLINE_HUD_OPEN_KEY "HUD/outlineHudOpen"
-#define GW_CHEAT_SHEET_HUD_OPEN_KEY "HUD/cheatSheetHudOpen"
-#define GW_DOCUMENT_STATISTICS_HUD_OPEN_KEY "HUD/documentStatisticsHudOpen"
-#define GW_SESSION_STATISTICS_HUD_OPEN_KEY "HUD/sessionStatisticsHudOpen"
 
 MainWindow::MainWindow(const QString& filePath, QWidget* parent)
     : QMainWindow(parent)
@@ -102,82 +105,6 @@ MainWindow::MainWindow(const QString& filePath, QWidget* parent)
     lastMousePos = QPoint(-1, -1);
 
     appSettings = AppSettings::getInstance();
-
-    cheatSheetWidget = new QListWidget();
-
-
-    // We need to set an empty style for the scrollbar in order for the
-    // scrollbar CSS stylesheet to take full effect.  Otherwise, the scrollbar's
-    // background color will have the Windows 98 checkered look rather than
-    // being a solid or transparent color.
-    //
-    cheatSheetWidget->verticalScrollBar()->setStyle(new QCommonStyle());
-    cheatSheetWidget->horizontalScrollBar()->setStyle(new QCommonStyle());
-
-    cheatSheetWidget->setSelectionMode(QAbstractItemView::NoSelection);
-    cheatSheetWidget->setAlternatingRowColors(appSettings->getAlternateHudRowColorsEnabled());
-
-    cheatSheetWidget->addItem(tr("# Heading 1"));
-    cheatSheetWidget->addItem(tr("## Heading 2"));
-    cheatSheetWidget->addItem(tr("### Heading 3"));
-    cheatSheetWidget->addItem(tr("#### Heading 4"));
-    cheatSheetWidget->addItem(tr("##### Heading 5"));
-    cheatSheetWidget->addItem(tr("###### Heading 6"));
-    cheatSheetWidget->addItem(tr("*Emphasis* _Emphasis_"));
-    cheatSheetWidget->addItem(tr("**Strong** __Strong__"));
-    cheatSheetWidget->addItem(tr("1. Numbered List"));
-    cheatSheetWidget->addItem(tr("* Bullet List"));
-    cheatSheetWidget->addItem(tr("+ Bullet List"));
-    cheatSheetWidget->addItem(tr("- Bullet List"));
-    cheatSheetWidget->addItem(tr("> Block Quote"));
-    cheatSheetWidget->addItem(tr("`Code Span`"));
-    cheatSheetWidget->addItem(tr("``` Code Block"));
-    cheatSheetWidget->addItem(tr("[Link](http://url.com \"Title\")"));
-    cheatSheetWidget->addItem(tr("[Reference Link][ID]"));
-    cheatSheetWidget->addItem(tr("[ID]: http://url.com \"Reference Definition\""));
-    cheatSheetWidget->addItem(tr("![Image](./image.jpg \"Title\")"));
-    cheatSheetWidget->addItem(tr("--- *** ___ Horizontal Rule"));
-
-    cheatSheetHud =
-        createHudWindow
-        (
-            tr("Cheat Sheet"),
-            cheatSheetWidget,
-            GW_CHEAT_SHEET_HUD_GEOMETRY_KEY,
-            GW_CHEAT_SHEET_HUD_OPEN_KEY
-        );
-
-    documentStatsWidget = new DocumentStatisticsWidget();
-    documentStatsWidget->verticalScrollBar()->setStyle(new QCommonStyle());
-    documentStatsWidget->horizontalScrollBar()->setStyle(new QCommonStyle());
-    documentStatsWidget->setSelectionMode(QAbstractItemView::NoSelection);
-    documentStatsWidget->setAlternatingRowColors(appSettings->getAlternateHudRowColorsEnabled());
-
-    documentStatsHud =
-        createHudWindow
-        (
-            tr("Document Statistics"),
-            documentStatsWidget,
-            GW_DOCUMENT_STATISTICS_HUD_GEOMETRY_KEY,
-            GW_DOCUMENT_STATISTICS_HUD_OPEN_KEY
-        );
-
-    sessionStatsWidget =new SessionStatisticsWidget();
-    sessionStatsWidget->verticalScrollBar()->setStyle(new QCommonStyle());
-    sessionStatsWidget->horizontalScrollBar()->setStyle(new QCommonStyle());
-    sessionStatsWidget->setSelectionMode(QAbstractItemView::NoSelection);
-    sessionStatsWidget->setAlternatingRowColors(appSettings->getAlternateHudRowColorsEnabled());
-
-    sessionStatsHud =
-        createHudWindow
-        (
-            tr("Session Statistics"),
-            sessionStatsWidget,
-            GW_SESSION_STATISTICS_HUD_GEOMETRY_KEY,
-            GW_SESSION_STATISTICS_HUD_OPEN_KEY
-        );
-
-    connect(appSettings, SIGNAL(hideHudsOnPreviewChanged(bool)), this, SLOT(onHideHudsOnPreviewChanged(bool)));
 
     MarkdownDocument* document = new MarkdownDocument();
 
@@ -194,8 +121,6 @@ MainWindow::MainWindow(const QString& filePath, QWidget* parent)
     editor->setBlockquoteStyle(appSettings->getBlockquoteStyle());
     editor->setSpellCheckEnabled(appSettings->getLiveSpellCheckEnabled());
     connect(editor, SIGNAL(fontSizeChanged(int)), this, SLOT(onFontSizeChanged(int)));
-    connect(editor, SIGNAL(typingPaused()), this, SLOT(onTypingPaused()));
-    connect(editor, SIGNAL(typingResumed()), this, SLOT(onTypingResumed()));
 
     // We need to set an empty style for the editor's scrollbar in order for the
     // scrollbar CSS stylesheet to take full effect.  Otherwise, the scrollbar's
@@ -205,49 +130,7 @@ MainWindow::MainWindow(const QString& filePath, QWidget* parent)
     editor->verticalScrollBar()->setStyle(new QCommonStyle());
     editor->horizontalScrollBar()->setStyle(new QCommonStyle());
 
-    outlineWidget = new Outline(editor, this);
-    outlineWidget->setAlternatingRowColors(appSettings->getAlternateHudRowColorsEnabled());
-
-    // Set empty style so that scrollbar styling takes full effect.
-    //
-    outlineWidget->verticalScrollBar()->setStyle(new QCommonStyle());
-    outlineWidget->horizontalScrollBar()->setStyle(new QCommonStyle());
-    
-    outlineHud =
-        createHudWindow
-        (
-            tr("Outline"),
-            outlineWidget,
-            GW_OUTLINE_HUD_GEOMETRY_KEY,
-            GW_OUTLINE_HUD_OPEN_KEY
-        );
-
-    sidebar = new QTabWidget(this);
-    sidebar->setTabPosition(QTabWidget::West);
-    sidebar->addTab(outlineWidget, "Outline");
-
-    documentStats = new DocumentStatistics(document, this);
-    connect(documentStats, SIGNAL(wordCountChanged(int)), documentStatsWidget, SLOT(setWordCount(int)));
-    connect(documentStats, SIGNAL(characterCountChanged(int)), documentStatsWidget, SLOT(setCharacterCount(int)));
-    connect(documentStats, SIGNAL(sentenceCountChanged(int)), documentStatsWidget, SLOT(setSentenceCount(int)));
-    connect(documentStats, SIGNAL(paragraphCountChanged(int)), documentStatsWidget, SLOT(setParagraphCount(int)));
-    connect(documentStats, SIGNAL(pageCountChanged(int)), documentStatsWidget, SLOT(setPageCount(int)));
-    connect(documentStats, SIGNAL(complexWordsChanged(int)), documentStatsWidget, SLOT(setComplexWords(int)));
-    connect(documentStats, SIGNAL(readingTimeChanged(int)), documentStatsWidget, SLOT(setReadingTime(int)));
-    connect(documentStats, SIGNAL(lixReadingEaseChanged(int)), documentStatsWidget, SLOT(setLixReadingEase(int)));
-    connect(documentStats, SIGNAL(readabilityIndexChanged(int)), documentStatsWidget, SLOT(setReadabilityIndex(int)));
-    connect(editor, SIGNAL(textSelected(QString,int,int)), documentStats, SLOT(onTextSelected(QString,int,int)));
-    connect(editor, SIGNAL(textDeselected()), documentStats, SLOT(onTextDeselected()));
-
-    sessionStats = new SessionStatistics(this);
-    connect(documentStats, SIGNAL(totalWordCountChanged(int)), sessionStats, SLOT(onDocumentWordCountChanged(int)));
-    connect(sessionStats, SIGNAL(wordCountChanged(int)), sessionStatsWidget, SLOT(setWordCount(int)));
-    connect(sessionStats, SIGNAL(pageCountChanged(int)), sessionStatsWidget, SLOT(setPageCount(int)));
-    connect(sessionStats, SIGNAL(wordsPerMinuteChanged(int)), sessionStatsWidget, SLOT(setWordsPerMinute(int)));
-    connect(sessionStats, SIGNAL(writingTimeChanged(unsigned long)), sessionStatsWidget, SLOT(setWritingTime(unsigned long)));
-    connect(sessionStats, SIGNAL(idleTimePercentageChanged(int)), sessionStatsWidget, SLOT(setIdleTime(int)));
-    connect(editor, SIGNAL(typingPaused()), sessionStats, SLOT(onTypingPaused()));
-    connect(editor, SIGNAL(typingResumed()), sessionStats, SLOT(onTypingResumed()));
+    buildSidebar();
 
     documentManager = new DocumentManager(editor, outlineWidget, documentStats, sessionStats, this);
     documentManager->setAutoSaveEnabled(appSettings->getAutoSaveEnabled());
@@ -376,7 +259,7 @@ MainWindow::MainWindow(const QString& filePath, QWidget* parent)
     }
 
     buildMenuBar();
-    buildStatusBar();
+    statusBar = buildStatusBar();
 
     connect(appSettings, SIGNAL(autoSaveChanged(bool)), documentManager, SLOT(setAutoSaveEnabled(bool)));
     connect(appSettings, SIGNAL(backupFileChanged(bool)), documentManager, SLOT(setFileBackupEnabled(bool)));
@@ -397,10 +280,6 @@ MainWindow::MainWindow(const QString& filePath, QWidget* parent)
     connect(appSettings, SIGNAL(editorWidthChanged(EditorWidth)), this, SLOT(changeEditorWidth(EditorWidth)));
     connect(appSettings, SIGNAL(interfaceStyleChanged(InterfaceStyle)), this, SLOT(changeInterfaceStyle(InterfaceStyle)));
     connect(appSettings, SIGNAL(blockquoteStyleChanged(BlockquoteStyle)), editor, SLOT(setBlockquoteStyle(BlockquoteStyle)));
-    connect(appSettings, SIGNAL(hudButtonLayoutChanged(HudWindowButtonLayout)), this, SLOT(changeHudButtonLayout(HudWindowButtonLayout)));
-    connect(appSettings, SIGNAL(alternateHudRowColorsChanged(bool)), this, SLOT(toggleOutlineAlternateRowColors(bool)));
-    connect(appSettings, SIGNAL(desktopCompositingChanged(bool)), this, SLOT(toggleDesktopCompositingEffects(bool)));
-    connect(appSettings, SIGNAL(hudOpacityChanged(int)), this, SLOT(changeHudOpacity(int)));
     connect(appSettings, SIGNAL(highlightLineBreaksChanged(bool)), editor, SLOT(setHighlightLineBreaks(bool)));
 
     if (this->isFullScreen() && appSettings->getHideMenuBarInFullScreenEnabled())
@@ -436,6 +315,14 @@ MainWindow::MainWindow(const QString& filePath, QWidget* parent)
         SLOT(updateWordCount(int))
     );
 
+    connect
+    (
+        sessionStats,
+        SIGNAL(wordsPerMinuteChanged(int)),
+        this,
+        SLOT(updateWordsPerMinute(int))
+    );
+
     // Note that the parent widget for this new window must be NULL, so that
     // it will hide beneath other windows when it is deactivated.
     //
@@ -453,14 +340,28 @@ MainWindow::MainWindow(const QString& filePath, QWidget* parent)
 
     htmlPreview->setStyleSheet(appSettings->getCurrentCssFile());
 
-    splitter = new QSplitter(this);
-    splitter->addWidget(sidebar);
-    splitter->addWidget(editorPane);
-    splitter->addWidget(htmlPreview);
-    splitter->setStyleSheet("QSplitter:handle { border: 0 }"
+    editorSplitter = new QSplitter(this);
+    editorSplitter->addWidget(editorPane);
+    editorSplitter->addWidget(htmlPreview);
+    editorSplitter->setStyleSheet("QSplitter:handle { border: 0 }"
         "QSplitter { border: 0; margin: 0; padding: 0 }");
-    setCentralWidget(splitter);
 
+    QVBoxLayout* mainLayout = new QVBoxLayout();
+    QWidget* mainPane = new QWidget(this);
+    mainPane->setLayout(mainLayout);
+    mainLayout->addWidget(editorSplitter, 500);
+    mainLayout->addWidget(statusBar, 1);
+    mainLayout->setSpacing(0);
+    mainLayout->setMargin(0);
+    
+    sidebarSplitter = new QSplitter(this);
+    sidebarSplitter->addWidget(sidebar);
+    sidebarSplitter->addWidget(mainPane);
+    sidebarSplitter->setStyleSheet("QSplitter:handle { border: 0 }"
+        "QSplitter { border: 0; margin: 0; padding: 0 }");
+
+    this->setCentralWidget(sidebarSplitter);
+    
     if (appSettings->getHtmlPreviewVisible())
     {
         htmlPreview->show();
@@ -470,44 +371,10 @@ MainWindow::MainWindow(const QString& filePath, QWidget* parent)
         htmlPreview->hide();
     }
 
-    // Set dimensions for all the windows/HUDs.
-    for (int i = 0; i < huds.length(); i++)
-    {
-        HudWindow* hud = huds.at(i);
-        QString key = hudGeometryKeys.at(i);
-
-        if (windowSettings.contains(key))
-        {
-            hud->restoreGeometry(windowSettings.value(key).toByteArray());
-        }
-        else
-        {
-            hud->move(200, 200);
-            hud->adjustSize();
-        }
-    }
-
     quickReferenceGuideViewer = NULL;
-
-    openHudsVisible = !appSettings->getHideHudsOnPreviewEnabled() || !appSettings->getHtmlPreviewVisible();
 
     // Show the main window.
     show();
-
-    // Show the remaining windows/HUDs based on whether they had been previously
-    // opened during the last session.
-    //
-    for (int i = 0; i < huds.length(); i++)
-    {
-        HudWindow* hud = huds.at(i);
-        QString key = hudOpenKeys.at(i);
-
-        if (windowSettings.value(key, QVariant(false)).toBool())
-        {
-            hud->setVisible(openHudsVisible);
-            openHuds.append(hud);
-        }
-    }
 
     // Apply the theme only after show() is called on all the widgets,
     // since the Outline scrollbars can end up transparent in Windows if
@@ -594,23 +461,7 @@ bool MainWindow::eventFilter(QObject* obj, QEvent* event)
 {
     Q_UNUSED(obj)
 
-    // If the option to hide the HUD windows when viewing the HTML preview
-    // is enabled, and if the HTML preview is currently visible and the
-    // main window has now been activated (instead of a HUD), then hide
-    // any visible HUDs.
-    //
     if
-    (
-        (obj == this) &&
-        (event->type() == QEvent::WindowActivate) &&
-        !openHudsVisible &&
-        appSettings->getHideHudsOnPreviewEnabled() &&
-        htmlPreview->isVisible()
-    )
-    {
-        setOpenHudsVisibility(false);
-    }
-    else if
     (
         (
             (event->type() == QEvent::Leave)
@@ -698,25 +549,6 @@ void MainWindow::quitApplication()
 
         windowSettings.setValue(GW_MAIN_WINDOW_GEOMETRY_KEY, saveGeometry());
         windowSettings.setValue(GW_MAIN_WINDOW_STATE_KEY, saveState());
-
-        for (int i = 0; i < huds.length(); i++)
-        {
-            HudWindow* hud = huds.at(i);
-            QString geomKey = hudGeometryKeys.at(i);
-            QString openKey = hudOpenKeys.at(i);
-
-            windowSettings.setValue(geomKey, hud->saveGeometry());
-
-            bool isVisible = hud->isVisible();
-
-            if (openHuds.contains(hud))
-            {
-                isVisible = true;
-            }
-
-            windowSettings.setValue(openKey, QVariant(isVisible));
-        }
-
         windowSettings.sync();
 
         DictionaryManager::instance().addProviders();
@@ -747,10 +579,8 @@ void MainWindow::openPreferencesDialog()
 
 void MainWindow::toggleHtmlPreview(bool checked)
 {
-    htmlPreviewButton->blockSignals(true);
     htmlPreviewMenuAction->blockSignals(true);
 
-    htmlPreviewButton->setChecked(checked);
     htmlPreviewMenuAction->setChecked(checked);
     appSettings->setHtmlPreviewVisible(checked);
 
@@ -758,25 +588,14 @@ void MainWindow::toggleHtmlPreview(bool checked)
     {
         htmlPreview->show();
         htmlPreview->updatePreview();
-
-        if (appSettings->getHideHudsOnPreviewEnabled())
-        {
-            setOpenHudsVisibility(false);
-        }
     }
     else
     {
         htmlPreview->hide();
-
-        if (appSettings->getHideHudsOnPreviewEnabled())
-        {
-            setOpenHudsVisibility(true);
-        }
     }
 
     adjustEditorWidth(this->width());
 
-    htmlPreviewButton->blockSignals(false);
     htmlPreviewMenuAction->blockSignals(false);
 }
 
@@ -808,10 +627,7 @@ void MainWindow::toggleFullScreen(bool checked)
 {
     static bool lastStateWasMaximized = false;
 
-    fullScreenButton->blockSignals(true);
     fullScreenMenuAction->blockSignals(true);
-
-    fullScreenButton->setChecked(checked);
     fullScreenMenuAction->setChecked(checked);
 
     if (this->isFullScreen() || !checked)
@@ -865,7 +681,6 @@ void MainWindow::toggleFullScreen(bool checked)
         }
     }
 
-    fullScreenButton->blockSignals(false);
     fullScreenMenuAction->blockSignals(false);
 }
 
@@ -918,32 +733,6 @@ void MainWindow::toggleDisplayTimeInFullScreen(bool checked)
     }
 }
 
-void MainWindow::toggleDesktopCompositingEffects(bool checked)
-{
-    foreach (HudWindow* hud, huds)
-    {
-        hud->setDesktopCompositingEnabled(checked);
-    }
-}
-
-void MainWindow::toggleOpenHudsVisibility()
-{
-    setOpenHudsVisibility(!openHudsVisible);
-}
-
-void MainWindow::toggleOpenHudsVisibility(bool checked)
-{
-    setOpenHudsVisibility(!checked);
-}
-
-void MainWindow::changeHudButtonLayout(HudWindowButtonLayout layout)
-{
-    foreach (HudWindow* hud, huds)
-    {
-        hud->setButtonLayout(layout);
-    }
-}
-
 void MainWindow::changeEditorWidth(EditorWidth editorWidth)
 {
     editor->setEditorWidth(editorWidth);
@@ -952,24 +741,8 @@ void MainWindow::changeEditorWidth(EditorWidth editorWidth)
 
 void MainWindow::changeInterfaceStyle(InterfaceStyle style)
 {
-    HudWindowShape shape;
+    Q_UNUSED(style);
 
-    switch (style)
-    {
-        case InterfaceStyleRounded:
-            shape = HudWindowShapeRounded;
-            break;
-        default:
-            shape = HudWindowShapeSquare;
-            break;
-    }
-
-    foreach (HudWindow* hud, huds)
-    {
-        hud->setShape(shape);
-    }
-
-    editor->setEditorCorners(style);
     applyTheme();
 }
 
@@ -1116,62 +889,6 @@ void MainWindow::showWikiPage()
     QDesktopServices::openUrl(QUrl("https://github.com/wereturtle/ghostwriter/wiki"));
 }
 
-void MainWindow::showOutlineHud()
-{
-    showHud(outlineHud);
-}
-
-void MainWindow::showCheatSheetHud()
-{
-    showHud(cheatSheetHud);
-}
-
-void MainWindow::showDocumentStatisticsHud()
-{
-    showHud(documentStatsHud);
-}
-
-void MainWindow::showSessionStatisticsHud()
-{
-    showHud(sessionStatsHud);
-}
-
-void MainWindow::onHideHudsOnPreviewChanged(bool enabled)
-{
-    if (enabled)
-    {
-        setOpenHudsVisibility(!htmlPreview->isVisible());
-    }
-    else
-    {
-        setOpenHudsVisibility(true);
-    }
-}
-
-void MainWindow::onHudClosed()
-{
-    openHuds.removeAll((HudWindow*)QObject::sender());
-}
-
-void MainWindow::onTypingPaused()
-{
-    if (appSettings->getHideHudsWhenTypingEnabled())
-    {
-        if (!appSettings->getHideHudsOnPreviewEnabled() || !htmlPreview->isVisible())
-        {
-            setOpenHudsVisibility(true);
-        }
-    }
-}
-
-void MainWindow::onTypingResumed()
-{
-    if (appSettings->getHideHudsWhenTypingEnabled())
-    {
-        setOpenHudsVisibility(false);
-    }
-}
-
 void MainWindow::showAbout()
 {
     QString aboutText =
@@ -1206,6 +923,11 @@ void MainWindow::showAbout()
 void MainWindow::updateWordCount(int newWordCount)
 {
     wordCountLabel->setText(tr("%Ln word(s)", "", newWordCount));
+}
+
+void MainWindow::updateWordsPerMinute(int wpm)
+{
+    wpmLabel->setText(tr("%Ln WPM", "", wpm));
 }
 
 void MainWindow::changeFocusMode(FocusMode focusMode)
@@ -1298,6 +1020,7 @@ void MainWindow::onOperationStarted(const QString& description)
     }
 
     wordCountLabel->hide();
+    wpmLabel->hide();
     statusLabel->show();
     this->update();
     qApp->processEvents();
@@ -1307,6 +1030,7 @@ void MainWindow::onOperationFinished()
 {
     statusLabel->setText(QString());
     wordCountLabel->show();
+    wpmLabel->show();
     statusLabel->hide();
     this->update();
     qApp->processEvents();
@@ -1355,18 +1079,6 @@ void MainWindow::onSetLocale()
             QApplication::applicationName(),
             tr("Please restart the application for changes to take effect.")
         );
-    }
-}
-
-void MainWindow::changeHudOpacity(int value)
-{
-    QColor color = outlineHud->getBackgroundColor();
-    color.setAlpha(value);
-
-    foreach (HudWindow* hud, huds)
-    {
-        hud->setBackgroundColor(color);
-        hud->update();
     }
 }
 
@@ -1469,41 +1181,6 @@ QAction* MainWindow::addMenuAction
     return action;
 }
 
-HudWindow* MainWindow::createHudWindow
-(
-    const QString& title,
-    QWidget* centralWidget,
-    const QString& geometrySettingsKey,
-    const QString& openSettingsKey
-)
-{
-    HudWindow* hud = new HudWindow(this);
-    hud->setWindowTitle(title);
-    hud->setCentralWidget(centralWidget);
-    hud->setButtonLayout(appSettings->getHudButtonLayout());
-    hud->setDesktopCompositingEnabled(appSettings->getDesktopCompositingEnabled());
-    huds.append(hud);
-    hudGeometryKeys.append(geometrySettingsKey);
-    hudOpenKeys.append(openSettingsKey);
-    connect(hud, SIGNAL(closed()), this, SLOT(onHudClosed()));
-
-    HudWindowShape hudShape;
-
-    switch (appSettings->getInterfaceStyle())
-    {
-        case InterfaceStyleRounded:
-            hudShape = HudWindowShapeRounded;
-            break;
-        default:
-            hudShape = HudWindowShapeSquare;
-            break;
-    }
-
-    hud->setShape(hudShape);
-
-    return hud;
-}
-
 void MainWindow::buildMenuBar()
 {
     menuBarHeight = this->menuBar()->height();
@@ -1593,14 +1270,10 @@ void MainWindow::buildMenuBar()
     viewMenu->addAction(htmlPreviewMenuAction);
     this->addAction(htmlPreviewMenuAction);
     
-    this->addAction(viewMenu->addAction(tr("&Outline HUD"), this, SLOT(showOutlineHud()), QKeySequence("CTRL+L")));
-    this->addAction(viewMenu->addAction(tr("&Cheat Sheet HUD"), this, SLOT(showCheatSheetHud()), QKeySequence::HelpContents));
-    viewMenu->addAction(tr("&Document Statistics HUD"), this, SLOT(showDocumentStatisticsHud()));
-    viewMenu->addAction(tr("&Session Statistics HUD"), this, SLOT(showSessionStatisticsHud()));
-    viewMenu->addSeparator();
-    hideOpenHudsAction =
-        viewMenu->addAction(tr("Hide Open &HUD Windows"), this, SLOT(toggleOpenHudsVisibility()), QKeySequence("CTRL+SHIFT+H"));
-    this->addAction(hideOpenHudsAction);
+    this->addAction(viewMenu->addAction(tr("&Outline"), this, [this]() { sidebar->setCurrentTab(OutlineSidebarTab); }, QKeySequence("CTRL+L")));
+    viewMenu->addAction(tr("&Session Statistics"), this, [this]() { sidebar->setCurrentTab(SessionStatsSidebarTab); } );
+    viewMenu->addAction(tr("&Document Statistics"), this, [this]() { sidebar->setCurrentTab(DocumentStatsSidebarTab); });
+    this->addAction(viewMenu->addAction(tr("&Cheat Sheet"), this, [this]() { sidebar->setCurrentTab(CheatSheetSidebarTab); }, QKeySequence::HelpContents));
     viewMenu->addSeparator();
     this->addAction(viewMenu->addAction(tr("Increase Font Size"), editor, SLOT(increaseFontSize()), QKeySequence("CTRL+=")));
     this->addAction(viewMenu->addAction(tr("Decrease Font Size"), editor, SLOT(decreaseFontSize()), QKeySequence("CTRL+-")));
@@ -1633,10 +1306,11 @@ void MainWindow::buildMenuBar()
     connect(helpMenu, SIGNAL(aboutToHide()), this, SLOT(onAboutToHideMenuBarMenu()));
 }
 
-void MainWindow::buildStatusBar()
+QWidget* MainWindow::buildStatusBar()
 {
-    QFrame* statusBarWidget = new QFrame(statusBar());
-    QGridLayout* statusBarLayout = new QGridLayout(statusBarWidget);
+    QWidget* statusBarWidget = new QWidget(this);
+    statusBarWidget->setObjectName("statusBar");
+    QGridLayout* statusBarLayout = new QGridLayout();
 
     // Divide the status bar into thirds for placing widgets.
     QFrame* leftWidget = new QFrame(statusBarWidget);
@@ -1662,29 +1336,22 @@ void MainWindow::buildStatusBar()
     // Add left-most widgets to status bar.
     timeLabel = new TimeLabel(this);
     leftLayout->addWidget(timeLabel, 0, Qt::AlignLeft);
+    statusBarWidgets.append(timeLabel);
 
     if (!this->isFullScreen() || appSettings->getDisplayTimeInFullScreenEnabled())
     {
         timeLabel->hide();
     }
 
-    previewOptionsButton = new QPushButton();
-    previewOptionsButton->setFocusPolicy(Qt::NoFocus);
-    previewOptionsButton->setToolTip(tr("Preview Options"));
-    connect(previewOptionsButton, SIGNAL(clicked(bool)), this, SLOT(showPreviewOptions()));
-    leftLayout->addWidget(previewOptionsButton, 0, Qt::AlignLeft);
+    wpmLabel = new QLabel();
+    wpmLabel->setAlignment(Qt::AlignLeft);
+    wpmLabel->setFrameShape(QFrame::NoFrame);
+    wpmLabel->setLineWidth(0);
+    updateWordsPerMinute(0);
+    leftLayout->addWidget(wpmLabel, 0, Qt::AlignLeft);
+    statusBarWidgets.append(wpmLabel);
 
-    exportButton = new QPushButton();
-    exportButton->setFocusPolicy(Qt::NoFocus);
-    exportButton->setToolTip(tr("Export"));
-    connect(exportButton, SIGNAL(clicked(bool)), documentManager, SLOT(exportFile()));
-    leftLayout->addWidget(exportButton, 0, Qt::AlignLeft);
-
-    copyHtmlButton = new QPushButton();
-    copyHtmlButton->setFocusPolicy(Qt::NoFocus);
-    copyHtmlButton->setToolTip(tr("Copy HTML"));
-    connect(copyHtmlButton, SIGNAL(clicked(bool)), this, SLOT(copyHtml()));
-    leftLayout->addWidget(copyHtmlButton, 0, Qt::AlignLeft);
+    QFont buttonFont(FONTAWESOME_SOLID_FONT);
 
     statusBarLayout->addWidget(leftWidget, 0, 0, 0, 1, Qt::AlignLeft);
 
@@ -1700,127 +1367,181 @@ void MainWindow::buildStatusBar()
     updateWordCount(0);
     midLayout->addWidget(wordCountLabel, 0, Qt::AlignCenter);
     statusBarLayout->addWidget(midWidget, 0, 1, 0, 1, Qt::AlignCenter);
+    statusBarWidgets.append(wordCountLabel);
 
     // Add right-most widgets to status bar.
-    hideOpenHudsButton = new QPushButton();
-    hideOpenHudsButton->setFocusPolicy(Qt::NoFocus);
-    hideOpenHudsButton->setToolTip(tr("Hide Open HUD Windows"));
-    hideOpenHudsButton->setCheckable(true);
-    hideOpenHudsButton->setChecked(appSettings->getHtmlPreviewVisible());
-    connect(hideOpenHudsButton, SIGNAL(toggled(bool)), this, SLOT(toggleOpenHudsVisibility(bool)));
-    rightLayout->addWidget(hideOpenHudsButton, 0, Qt::AlignRight);
+    QPushButton* button = new QPushButton(FONTAWESOME_CODE);
+    button->setFont(buttonFont);
+    button->setFocusPolicy(Qt::NoFocus);
+    button->setToolTip(tr("Toggle Live HTML Preview"));
+    button->setCheckable(true);
+    button->setChecked(appSettings->getHtmlPreviewVisible());
+    connect(button, SIGNAL(toggled(bool)), this, SLOT(toggleHtmlPreview(bool)));
+    rightLayout->addWidget(button, 0, Qt::AlignRight);
+    statusBarWidgets.append(button);
 
-    htmlPreviewButton = new QPushButton();
-    htmlPreviewButton->setFocusPolicy(Qt::NoFocus);
-    htmlPreviewButton->setToolTip(tr("Toggle Live HTML Preview"));
-    htmlPreviewButton->setCheckable(true);
-    htmlPreviewButton->setChecked(appSettings->getHtmlPreviewVisible());
-    connect(htmlPreviewButton, SIGNAL(toggled(bool)), this, SLOT(toggleHtmlPreview(bool)));
-    rightLayout->addWidget(htmlPreviewButton, 0, Qt::AlignRight);
+    button = new QPushButton(FONTAWESOME_BACKSPACE);
+    button->setFont(buttonFont);
+    button->setFocusPolicy(Qt::NoFocus);
+    button->setToolTip(tr("Toggle Hemingway mode"));
+    button->setCheckable(true);
+    connect(button, SIGNAL(toggled(bool)), this, SLOT(toggleHemingwayMode(bool)));
+    rightLayout->addWidget(button, 0, Qt::AlignRight);
+    statusBarWidgets.append(button);
 
-    hemingwayModeButton = new QPushButton();
-    hemingwayModeButton->setFocusPolicy(Qt::NoFocus);
-    hemingwayModeButton->setToolTip(tr("Toggle Hemingway mode"));
-    hemingwayModeButton->setCheckable(true);
-    connect(hemingwayModeButton, SIGNAL(toggled(bool)), this, SLOT(toggleHemingwayMode(bool)));
-    rightLayout->addWidget(hemingwayModeButton, 0, Qt::AlignRight);
+    button = new QPushButton(FONTAWESOME_HEADPHONES_ALT);
+    button->setFont(buttonFont);
+    button->setFocusPolicy(Qt::NoFocus);
+    button->setToolTip(tr("Toggle distraction free mode"));
+    button->setCheckable(true);
+    connect(button, SIGNAL(toggled(bool)), this, SLOT(toggleFocusMode(bool)));
+    rightLayout->addWidget(button, 0, Qt::AlignRight);
+    statusBarWidgets.append(button);
 
-    focusModeButton = new QPushButton();
-    focusModeButton->setFocusPolicy(Qt::NoFocus);
-    focusModeButton->setToolTip(tr("Toggle distraction free mode"));
-    focusModeButton->setCheckable(true);
-    connect(focusModeButton, SIGNAL(toggled(bool)), this, SLOT(toggleFocusMode(bool)));
-    rightLayout->addWidget(focusModeButton, 0, Qt::AlignRight);
-
-    fullScreenButton = new QPushButton();
-    fullScreenButton->setFocusPolicy(Qt::NoFocus);
-    fullScreenButton->setObjectName("fullscreenButton");
-    fullScreenButton->setToolTip(tr("Toggle full screen mode"));
-    fullScreenButton->setCheckable(true);
-    fullScreenButton->setChecked(this->isFullScreen());
-    connect(fullScreenButton, SIGNAL(toggled(bool)), this, SLOT(toggleFullScreen(bool)));
-    rightLayout->addWidget(fullScreenButton, 0, Qt::AlignRight);
+    button = new QPushButton(FONTAWESOME_EXPAND);
+    button->setFont(buttonFont);
+    button->setFocusPolicy(Qt::NoFocus);
+    button->setObjectName("fullscreenButton");
+    button->setToolTip(tr("Toggle full screen mode"));
+    button->setCheckable(true);
+    button->setChecked(this->isFullScreen());
+    connect(button, SIGNAL(toggled(bool)), this, SLOT(toggleFullScreen(bool)));
+    rightLayout->addWidget(button, 0, Qt::AlignRight);
+    statusBarWidgets.append(button);
 
     statusBarLayout->addWidget(rightWidget, 0, 2, 0, 1, Qt::AlignRight);
 
-    statusBarLayout->setSpacing(0);
     statusBarWidget->setLayout(statusBarLayout);
-    statusBar()->addWidget(statusBarWidget, 1);
-    statusBar()->setSizeGripEnabled(false);
+    statusBarLayout->setSpacing(0);
+    statusBarLayout->setContentsMargins(2, 2, 2, 2);
 
-    statusBar()->layout()->setContentsMargins(0, 0, 0, 0);
-    statusBarLayout->setContentsMargins(2, 0, 2, 0);
-
-    statusBar()->show();
-
-    // Ensure DPI scaling of buttons with application menu bar font.
-    //
-    int menuBarFontWidth = this->menuBar()->fontInfo().pixelSize() + 10;
-
-    fullScreenButton->setIcon(QIcon(":/resources/images/fullscreen-dark.svg"));
-    fullScreenButton->setIconSize(QSize(menuBarFontWidth, menuBarFontWidth));
-    focusModeButton->setIcon(QIcon(":/resources/images/focus-dark.svg"));
-    focusModeButton->setIconSize(QSize(menuBarFontWidth, menuBarFontWidth));
-    hemingwayModeButton->setIcon(QIcon(":/resources/images/hemingway-dark.svg"));
-    hemingwayModeButton->setIconSize(QSize(menuBarFontWidth, menuBarFontWidth));
-    htmlPreviewButton->setIcon(QIcon(":/resources/images/html-preview-dark.svg"));
-    htmlPreviewButton->setIconSize(QSize(menuBarFontWidth, menuBarFontWidth));
-    hideOpenHudsButton->setIcon(QIcon(":/resources/images/hide-huds-dark.svg"));
-    hideOpenHudsButton->setIconSize(QSize(menuBarFontWidth, menuBarFontWidth));
-    copyHtmlButton->setIcon(QIcon(":/resources/images/copy-html-dark.svg"));
-    copyHtmlButton->setIconSize(QSize(menuBarFontWidth, menuBarFontWidth));
-    exportButton->setIcon(QIcon(":/resources/images/export-dark.svg"));
-    exportButton->setIconSize(QSize(menuBarFontWidth, menuBarFontWidth));
-    previewOptionsButton->setIcon(QIcon(":/resources/images/configure-dark.svg"));
-    previewOptionsButton->setIconSize(QSize(menuBarFontWidth, menuBarFontWidth));
-
-    // Add status bar widgets to a list for convenience
-    // in applying graphics effects to them.
-    //
-    statusBarButtons.append(previewOptionsButton);
-    statusBarButtons.append(exportButton);
-    statusBarButtons.append(copyHtmlButton);
-    statusBarButtons.append(hideOpenHudsButton);
-    statusBarButtons.append(htmlPreviewButton);
-    statusBarButtons.append(hemingwayModeButton);
-    statusBarButtons.append(focusModeButton);
-    statusBarButtons.append(fullScreenButton);
-
-    statusBarWidgets = statusBarButtons;
-    statusBarWidgets.append(timeLabel);
-    statusBarWidgets.append(wordCountLabel);
+    return statusBarWidget;
 }
 
-void MainWindow::showHud(HudWindow *hud)
+void MainWindow::buildSidebar() 
 {
-    hud->show();
-    hud->activateWindow();
+    cheatSheetWidget = new QListWidget();
 
-    if (!openHuds.contains(hud))
+    // We need to set an empty style for the scrollbar in order for the
+    // scrollbar CSS stylesheet to take full effect.  Otherwise, the scrollbar's
+    // background color will have the Windows 98 checkered look rather than
+    // being a solid or transparent color.
+    //
+    cheatSheetWidget->verticalScrollBar()->setStyle(new QCommonStyle());
+    cheatSheetWidget->horizontalScrollBar()->setStyle(new QCommonStyle());
+
+    cheatSheetWidget->setSelectionMode(QAbstractItemView::NoSelection);
+    cheatSheetWidget->setAlternatingRowColors(false);
+
+    cheatSheetWidget->addItem(tr("# Heading 1"));
+    cheatSheetWidget->addItem(tr("## Heading 2"));
+    cheatSheetWidget->addItem(tr("### Heading 3"));
+    cheatSheetWidget->addItem(tr("#### Heading 4"));
+    cheatSheetWidget->addItem(tr("##### Heading 5"));
+    cheatSheetWidget->addItem(tr("###### Heading 6"));
+    cheatSheetWidget->addItem(tr("*Emphasis* _Emphasis_"));
+    cheatSheetWidget->addItem(tr("**Strong** __Strong__"));
+    cheatSheetWidget->addItem(tr("1. Numbered List"));
+    cheatSheetWidget->addItem(tr("* Bullet List"));
+    cheatSheetWidget->addItem(tr("+ Bullet List"));
+    cheatSheetWidget->addItem(tr("- Bullet List"));
+    cheatSheetWidget->addItem(tr("> Block Quote"));
+    cheatSheetWidget->addItem(tr("`Code Span`"));
+    cheatSheetWidget->addItem(tr("``` Code Block"));
+    cheatSheetWidget->addItem(tr("[Link](http://url.com \"Title\")"));
+    cheatSheetWidget->addItem(tr("[Reference Link][ID]"));
+    cheatSheetWidget->addItem(tr("[ID]: http://url.com \"Reference Definition\""));
+    cheatSheetWidget->addItem(tr("![Image](./image.jpg \"Title\")"));
+    cheatSheetWidget->addItem(tr("--- *** ___ Horizontal Rule"));
+
+    documentStatsWidget = new DocumentStatisticsWidget();
+    documentStatsWidget->verticalScrollBar()->setStyle(new QCommonStyle());
+    documentStatsWidget->horizontalScrollBar()->setStyle(new QCommonStyle());
+    documentStatsWidget->setSelectionMode(QAbstractItemView::NoSelection);
+    documentStatsWidget->setAlternatingRowColors(false);
+
+    sessionStatsWidget = new SessionStatisticsWidget();
+    sessionStatsWidget->verticalScrollBar()->setStyle(new QCommonStyle());
+    sessionStatsWidget->horizontalScrollBar()->setStyle(new QCommonStyle());
+    sessionStatsWidget->setSelectionMode(QAbstractItemView::NoSelection);
+    sessionStatsWidget->setAlternatingRowColors(false);
+
+    outlineWidget = new Outline(editor, this);
+    outlineWidget->setAlternatingRowColors(false);
+
+    // Set empty style so that scrollbar styling takes full effect.
+    //
+    outlineWidget->verticalScrollBar()->setStyle(new QCommonStyle());
+    outlineWidget->horizontalScrollBar()->setStyle(new QCommonStyle());
+
+    documentStats = new DocumentStatistics((MarkdownDocument*) editor->document(), this);
+    connect(documentStats, SIGNAL(wordCountChanged(int)), documentStatsWidget, SLOT(setWordCount(int)));
+    connect(documentStats, SIGNAL(characterCountChanged(int)), documentStatsWidget, SLOT(setCharacterCount(int)));
+    connect(documentStats, SIGNAL(sentenceCountChanged(int)), documentStatsWidget, SLOT(setSentenceCount(int)));
+    connect(documentStats, SIGNAL(paragraphCountChanged(int)), documentStatsWidget, SLOT(setParagraphCount(int)));
+    connect(documentStats, SIGNAL(pageCountChanged(int)), documentStatsWidget, SLOT(setPageCount(int)));
+    connect(documentStats, SIGNAL(complexWordsChanged(int)), documentStatsWidget, SLOT(setComplexWords(int)));
+    connect(documentStats, SIGNAL(readingTimeChanged(int)), documentStatsWidget, SLOT(setReadingTime(int)));
+    connect(documentStats, SIGNAL(lixReadingEaseChanged(int)), documentStatsWidget, SLOT(setLixReadingEase(int)));
+    connect(documentStats, SIGNAL(readabilityIndexChanged(int)), documentStatsWidget, SLOT(setReadabilityIndex(int)));
+    connect(editor, SIGNAL(textSelected(QString,int,int)), documentStats, SLOT(onTextSelected(QString,int,int)));
+    connect(editor, SIGNAL(textDeselected()), documentStats, SLOT(onTextDeselected()));
+
+    sessionStats = new SessionStatistics(this);
+    connect(documentStats, SIGNAL(totalWordCountChanged(int)), sessionStats, SLOT(onDocumentWordCountChanged(int)));
+    connect(sessionStats, SIGNAL(wordCountChanged(int)), sessionStatsWidget, SLOT(setWordCount(int)));
+    connect(sessionStats, SIGNAL(pageCountChanged(int)), sessionStatsWidget, SLOT(setPageCount(int)));
+    connect(sessionStats, SIGNAL(wordsPerMinuteChanged(int)), sessionStatsWidget, SLOT(setWordsPerMinute(int)));
+    connect(sessionStats, SIGNAL(writingTimeChanged(unsigned long)), sessionStatsWidget, SLOT(setWritingTime(unsigned long)));
+    connect(sessionStats, SIGNAL(idleTimePercentageChanged(int)), sessionStatsWidget, SLOT(setIdleTime(int)));
+    connect(editor, SIGNAL(typingPaused()), sessionStats, SLOT(onTypingPaused()));
+    connect(editor, SIGNAL(typingResumed()), sessionStats, SLOT(onTypingResumed()));
+    
+    sidebar = new Sidebar(this);
+    sidebar->setMinimumWidth(0.15 * qApp->primaryScreen()->size().width());
+    sidebar->addTab(FONTAWESOME_HASH_TAG, tr("Outline"), outlineWidget);
+    sidebar->addTab(FONTAWESOME_TACHOMETER, tr("Session Statistics"), sessionStatsWidget);
+    sidebar->addTab(FONTAWESOME_CHART_BAR, tr("Document Statistics"), documentStatsWidget);
+    sidebar->addTab(FONTAWESOME_BRAND_MARKDOWN, tr("Cheat Sheet"), cheatSheetWidget, FontAwesomeBrands);
+
+    int tabIndex = QSettings().value("sidebarCurrentTab", (int)FirstSidebarTab).toInt();
+
+    if (tabIndex < 0 || tabIndex >= sidebar->getCount())
     {
-        openHuds.append(hud);
+        tabIndex = (int) FirstSidebarTab;
     }
+
+    sidebar->setCurrentTab(tabIndex);
 }
 
 void MainWindow::adjustEditorWidth(int width)
 {
+    QList<int> sidebarSplitterSizes;
+    QList<int> editorSplitterSizes;
     int editorWidth = width;
 
-    if (sidebar->isVisible())
+    if (width < (0.5 * qApp->primaryScreen()->size().width()))
     {
+        sidebarSplitterSizes.append(0);
+    }
+    else
+    {
+        sidebar->resize(sidebar->minimumWidth(), this->height());
+        sidebarSplitterSizes.append(sidebar->width());
         editorWidth -= sidebar->width();
     }
 
+    sidebarSplitterSizes.append(editorWidth);
+    
     if (htmlPreview->isVisible())
     {
         editorWidth /= 2;
-
-        QList<int> sizes;
-        sizes.append(sidebar->width());
-        sizes.append(editorWidth);
-        sizes.append(editorWidth);
-        splitter->setSizes(sizes);
+        editorSplitterSizes.append(editorWidth);
     }
+
+    editorSplitterSizes.append(editorWidth);
+    editorSplitter->setSizes(editorSplitterSizes);
+    sidebarSplitter->setSizes(sidebarSplitterSizes);
 
     // Resize the editor's margins based on the size of the window.
     editor->setupPaperMargins(editorWidth);
@@ -1837,23 +1558,6 @@ void MainWindow::applyTheme()
     }
 
     StyleSheetBuilder styler(theme, (InterfaceStyleRounded == appSettings->getInterfaceStyle()));
-
-    // Remove old graphics effects from the status bar widgets.
-    foreach (QWidget* widget, statusBarWidgets)
-    {
-        // Do NOT delete the old QGraphicsColorizeEffect.  Qt seems to
-        // delete it at an arbitrary time, based on parental ownership.
-        //
-        widget->setGraphicsEffect(NULL);
-    }
-
-    // Set colorize effects for icon buttons.
-    foreach (QWidget* widget, statusBarButtons)
-    {
-        QGraphicsColorizeEffect* colorizeEffect = new QGraphicsColorizeEffect(this);
-        colorizeEffect->setColor(styler.getChromeForegroundColor());
-        widget->setGraphicsEffect(colorizeEffect);
-    }
 
     editor->setColorScheme
     (
@@ -1876,20 +1580,22 @@ void MainWindow::applyTheme()
     //
     qApp->setStyleSheet(styler.getLayoutStyleSheet());
 
-    splitter->setStyleSheet(styler.getSplitterStyleSheet());
-    this->statusBar()->setStyleSheet(styler.getStatusBarStyleSheet());
-    //statusLabel->setStyleSheet(styler.getStatusLabelStyleSheet());
+    editorSplitter->setStyleSheet(styler.getSplitterStyleSheet());
+    sidebarSplitter->setStyleSheet(styler.getSplitterStyleSheet());
+    statusBar->setStyleSheet(styler.getStatusBarStyleSheet());
 
     foreach (QWidget* w, statusBarWidgets)
     {
         w->setStyleSheet(styler.getStatusBarWidgetsStyleSheet());
     }
 
+    sidebar->setStyleSheet(styler.getSidebarStyleSheet());
+
     // Clear style sheet cache by setting to empty string before
     // setting the new style sheet.
     //
-    //outlineWidget->setStyleSheet("");
-    //outlineWidget->setStyleSheet(styler.getSidebarWidgetStyleSheet());
+    outlineWidget->setStyleSheet("");
+    outlineWidget->setStyleSheet(styler.getSidebarWidgetStyleSheet());
     cheatSheetWidget->setStyleSheet("");
     cheatSheetWidget->setStyleSheet(styler.getSidebarWidgetStyleSheet());
     documentStatsWidget->setStyleSheet("");
@@ -1927,35 +1633,4 @@ void MainWindow::hideMenuBar()
 bool MainWindow::isMenuBarVisible() const
 {
     return this->menuBar()->isVisible();
-}
-
-void MainWindow::setOpenHudsVisibility(bool visible)
-{
-    openHudsVisible = visible;
-
-    foreach (HudWindow* hud, openHuds)
-    {
-        hud->setVisible(visible);
-    }
-
-    if (visible)
-    {
-        hideOpenHudsAction->setText(tr("Hide Open &HUD Windows"));
-
-        hideOpenHudsButton->blockSignals(true);
-        hideOpenHudsButton->setChecked(false);
-        hideOpenHudsButton->setToolTip(tr("Hide Open HUD Windows"));
-        hideOpenHudsButton->blockSignals(false);
-
-        // Set focus on the editor.
-        this->activateWindow();
-    }
-    else
-    {
-        hideOpenHudsAction->setText(tr("Show Open &HUD Windows"));
-        hideOpenHudsButton->blockSignals(true);
-        hideOpenHudsButton->setChecked(true);
-        hideOpenHudsButton->setToolTip(tr("Show Open HUD Windows"));
-        hideOpenHudsButton->blockSignals(false);
-    }
 }

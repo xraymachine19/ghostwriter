@@ -42,7 +42,22 @@ class StyleSheetBuilder
         QString getSidebarWidgetStyleSheet();
         
     private:
-        Color chromeFgColor;
+        enum PaletteType
+        {
+            BackgroundColor,
+            ForegroundColor,
+            FaintColor,
+            PressedColor,
+            HoverColor,
+            SelectedColor,
+            HighlightColor,
+            InterfaceTextColor,
+            LastPaletteColor = InterfaceTextColor
+        };
+
+        Color palette[LastPaletteColor + 1];
+
+        QString scrollBarStyleSheet;
         QString layoutStyleSheet;
         QString splitterStyleSheet;
         QString editorStyleSheet;
@@ -51,6 +66,16 @@ class StyleSheetBuilder
         QString statusLabelStyleSheet;
         QString sidebarStyleSheet;
         QString sidebarWidgetStyleSheet;
+
+        void buildScrollBarStyleSheet(const bool roundedCorners);
+        void buildLayoutStyleSheet();
+        void buildSplitterStyleSheet();
+        void buildEditorStyleSheet();
+        void buildStatusBarStyleSheet();
+        void buildStatusBarWidgetStyleSheet();
+        void buildStatusLabelStyleSheet();
+        void buildSidebarStyleSheet();
+        void buildSidebarWidgetStyleSheet(const bool roundedCorners);
 };
 
 #endif // STYLESHEETBUILDER_H

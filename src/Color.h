@@ -21,7 +21,12 @@
 #define COLOR_H
 
 #include <QColor>
+#include <QTextStream>
 #include <QString>
+
+class Color;
+
+QTextStream& operator<<(QTextStream& output, const Color& color);
 
 /**
  * Helper class for dealing with colors that inherits QColor
@@ -37,10 +42,7 @@ class Color : public QColor
          */
         Color(const QColor& color);
 
-        // /**
-        //  * Copy constructor.
-        //  */
-        // Color(const Color& color);
+        friend QTextStream& operator<<(QTextStream& output, const Color& color);
 
         /**
          * Applies an alpha effect to this foreground color against the

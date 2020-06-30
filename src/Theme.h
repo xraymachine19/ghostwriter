@@ -62,6 +62,9 @@ class Theme
         Color getBackgroundColor() const;
         void setBackgroundColor(const Color& value);
 
+        Color getSelectionColor() const;
+        void setSelectionColor(const Color& value);
+
         Color getMarkupColor() const;
         void setMarkupColor(const Color& value);
 

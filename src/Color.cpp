@@ -27,10 +27,11 @@ Color::Color(const QColor& color) : QColor(color)
     ;
 }
 
-// Color::Color(const Color& color) : QColor(color)
-// {
-//     ;
-// }
+QTextStream& operator<<(QTextStream& output, const Color& color) 
+{ 
+    output << color.toRgbString();
+    return output;
+}
 
 Color Color::applyAlpha(const Color& background) const
 {

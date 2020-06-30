@@ -1,6 +1,6 @@
 /***********************************************************************
  *
- * Copyright (C) 2014-2018 wereturtle
+ * Copyright (C) 2014-2020 wereturtle
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,31 +17,32 @@
  *
  ***********************************************************************/
 
-#include <QStringList>
-#include <QListWidget>
-#include <QGridLayout>
-#include <QDialogButtonBox>
-#include <QPushButton>
-#include <QList>
-#include <QString>
-#include <QMessageBox>
-#include <QListWidgetItem>
-#include <QPainter>
-#include <QIcon>
-#include <QPixmap>
-#include <QImage>
 #include <QBrush>
 #include <QColor>
+#include <QDialogButtonBox>
+#include <QGridLayout>
+#include <QIcon>
+#include <QImage>
+#include <QList>
+#include <QListWidget>
+#include <QListWidgetItem>
+#include <QMessageBox>
+#include <QPainter>
+#include <QPixmap>
+#include <QPushButton>
 #include <QSize>
+#include <QString>
+#include <QStringList>
 
-#include "ThemeSelectionDialog.h"
+#include "FontAwesome.h"
+#include "MessageBoxHelper.h"
+#include "ThemeEditorDialog.h"
 #include "ThemeFactory.h"
 #include "ThemePreviewer.h"
-#include "ThemeEditorDialog.h"
-#include "MessageBoxHelper.h"
+#include "ThemeSelectionDialog.h"
 
-#define GW_LIST_WIDGET_ICON_WIDTH 200
-#define GW_LIST_WIDGET_ICON_HEIGHT 125
+#define GW_LIST_WIDGET_ICON_WIDTH 300
+#define GW_LIST_WIDGET_ICON_HEIGHT 175
 
 ThemeSelectionDialog::ThemeSelectionDialog
 (
@@ -75,11 +76,11 @@ ThemeSelectionDialog::ThemeSelectionDialog
             style()->pixelMetric(QStyle::PM_ScrollBarExtent);
     const int spacing = 10;
     const int rowCount = 3;
-    const int columnCount = 4;
+    const int columnCount = 3;
     QSize viewSize
     (
-        ((GW_LIST_WIDGET_ICON_WIDTH + frame + focush + (spacing * 2)) * columnCount) + scrollbar,
-        (GW_LIST_WIDGET_ICON_HEIGHT + fontMetrics().height() + frame + focusv + (spacing * 2)) * rowCount
+        ((iconWidth + frame + focush + (spacing * 2)) * columnCount) + scrollbar,
+        (iconHeight + fontMetrics().height() + frame + focusv + (spacing * 2)) * rowCount
     );
 
     // Set up theme list
@@ -87,7 +88,7 @@ ThemeSelectionDialog::ThemeSelectionDialog
     themeListWidget->setSortingEnabled(true);
     themeListWidget->setFlow(QListView::LeftToRight);
     themeListWidget->setViewMode(QListView::IconMode);
-    themeListWidget->setIconSize(QSize(GW_LIST_WIDGET_ICON_WIDTH, GW_LIST_WIDGET_ICON_HEIGHT));
+    themeListWidget->setIconSize(QSize(iconWidth, iconHeight));
     themeListWidget->setSpacing(spacing);
     themeListWidget->setMovement(QListView::Static);
     themeListWidget->setResizeMode(QListView::Adjust);
@@ -109,10 +110,18 @@ ThemeSelectionDialog::ThemeSelectionDialog
         if (!err.isNull())
         {
             themeIcon = QIcon(":resources/images/unavailable.svg");
+            QPixmap thumbnailPixmap(iconWidth, iconHeight);
+            thumbnailPixmap.setDevicePixelRatio(dpr);
+            thumbnailPixmap.fill(Qt::white);
+            QPainter painter(&thumbnailPixmap);
+            painter.setRenderHint(QPainter::Antialiasing);
+            themeIcon.paint(&painter, 0, 0, GW_LIST_WIDGET_ICON_WIDTH, GW_LIST_WIDGET_ICON_HEIGHT);
+            painter.end();
+            themeIcon = thumbnailPixmap;
         }
         else
         {
-            ThemePreviewer previewer(theme, iconWidth, iconHeight);
+            ThemePreviewer previewer(theme, GW_LIST_WIDGET_ICON_WIDTH, GW_LIST_WIDGET_ICON_HEIGHT, dpr);
             themeIcon = previewer.getIcon();
         }
 
@@ -122,6 +131,12 @@ ThemeSelectionDialog::ThemeSelectionDialog
                 themeName,
                 themeListWidget
             );
+        
+        if (!err.isNull())
+        {
+            item->setToolTip(err);
+        }
+
         themeListWidget->insertItem(themeListWidget->count(), item);
 
         if (themeName == currentThemeName)
@@ -132,8 +147,10 @@ ThemeSelectionDialog::ThemeSelectionDialog
     }
 
     QDialogButtonBox* buttonBox = new QDialogButtonBox(Qt::Horizontal, this);
-    QPushButton* newThemeButton = new QPushButton(" + ");
-    QPushButton* deleteThemeButton = new QPushButton(" - ");
+    QPushButton* newThemeButton = new QPushButton(FONTAWESOME_PLUS);
+    newThemeButton->setFont(QFont(FONTAWESOME_SOLID_FONT));
+    QPushButton* deleteThemeButton = new QPushButton(FONTAWESOME_MINUS);
+    deleteThemeButton->setFont(QFont(FONTAWESOME_SOLID_FONT));
     QPushButton* editThemeButton = new QPushButton(tr("Edit..."));
 
     buttonBox->addButton(newThemeButton, QDialogButtonBox::ActionRole);

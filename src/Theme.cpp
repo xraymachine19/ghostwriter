@@ -24,6 +24,7 @@ const QStringList Theme::keyArray
     QStringList()
         << "foreground"
         << "background"
+        << "selection"
         << "markup"
         << "link"
         << "heading"
@@ -122,6 +123,17 @@ Color Theme::getBackgroundColor() const
 void Theme::setBackgroundColor(const Color& value)
 {
     colors.insert("background", value);
+}
+
+
+Color Theme::getSelectionColor() const
+{
+    return colors.value("selection");
+}
+
+void Theme::setSelectionColor(const Color& value)
+{
+    colors.insert("selection", value);
 }
 
 Color Theme::getMarkupColor() const

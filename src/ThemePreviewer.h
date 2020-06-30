@@ -1,6 +1,6 @@
 /***********************************************************************
  *
- * Copyright (C) 2014, 2015 wereturtle
+ * Copyright (C) 2014-2020 wereturtle
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -37,7 +37,7 @@ class ThemePreviewer
          * the preview will be rendered immediately, and thereafter accessible
          * in cached form with a call to getIcon().
          */
-        ThemePreviewer(const Theme& theme, int width, int height);
+        ThemePreviewer(const Theme& theme, int width, int height, qreal dpr = 1.0);
 
         /**
          * Destructor.
@@ -49,17 +49,10 @@ class ThemePreviewer
          */
         QIcon getIcon();
 
-        /**
-         * Renders the thumbnail preview for the given theme to easily update
-         * the icon for new theme settings.
-         */
-        void renderPreview(const Theme& newSettings);
-
     private:
-        Theme theme;
-        int width;
-        int height;
         QIcon thumbnailPreviewIcon;
+
+        static const QString loremIpsum;
 
 };
 

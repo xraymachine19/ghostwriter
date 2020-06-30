@@ -47,6 +47,9 @@ ThemeEditorDialog::ThemeEditorDialog(const Theme& theme, QWidget* parent)
     textColorButton = new ColorButton(this);
     textColorButton->setColor(theme.getDefaultTextColor());
 
+    selectionColorButton = new ColorButton(this);
+    selectionColorButton->setColor(theme.getSelectionColor());
+
     markupColorButton = new ColorButton(this);
     markupColorButton->setColor(theme.getMarkupColor());
 
@@ -79,12 +82,13 @@ ThemeEditorDialog::ThemeEditorDialog(const Theme& theme, QWidget* parent)
     editorColorsLayout->setFieldGrowthPolicy(QFormLayout::FieldsStayAtSizeHint);
 
     editorColorsLayout->addRow(tr("Text Color"), textColorButton);
+    editorColorsLayout->addRow(tr("Text Area Background Color"), backgroundColorButton);
+    editorColorsLayout->addRow(tr("Selection Color"), selectionColorButton);
     editorColorsLayout->addRow(tr("Markup Color"), markupColorButton);
     editorColorsLayout->addRow(tr("Link Color"), linkColorButton);
     editorColorsLayout->addRow(tr("Emphasis Color"), emphasisColorButton);
     editorColorsLayout->addRow(tr("Block Text Color"), blockTextColorButton);
     editorColorsLayout->addRow(tr("Spelling Error Color"), spellcheckColorButton);
-    editorColorsLayout->addRow(tr("Text Area Background Color"), backgroundColorButton);
 
     layout->addLayout(editorColorsLayout);
 
