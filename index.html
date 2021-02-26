@@ -11,13 +11,11 @@
 
     <title>ghostwriter</title>
 
-    <!-- Bootstrap core CSS -->
-    <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Cavepaint core CSS -->
+    <link href="css/cavepaint.css" rel="stylesheet">
 
     <!-- Custom styles for this template -->
     <link href="css/custom.css" rel="stylesheet">
-
-    <script src="bootstrap/js/ie-emulation-modes-warning.js"></script>
 
     <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
     <!--[if lt IE 9]>
@@ -26,187 +24,173 @@
     <![endif]-->
   </head>
 
-  <body>
-
-    <div class="container">
-
+  <body class="inner-page-width text-padding">
+    <div class="feature inner-gutter">
       <div class="text-center">
-        <p><img width="50%" height="50%" class="img-responsive center-block" src="images/logo.png" alt="ghostwriter"></p>
-        <h1><small>A distraction-free Markdown editor for Windows and Linux</small></h1>
-        <p class="lead">Stylish. Open source. Free.</p>
+        <p><img class="margin-auto golden-width margin" src="images/logo.png" alt="ghostwriter"></p>
+        <h1 class="text-color dark gray small">A distraction-free Markdown editor for Windows and Linux</h1>
+        <p class="big gutter-bottom">Stylish. Open source. Free.</p>
       </div>
-
-      <div class="text-center">
-        <p><a class="btn btn-primary" href="http://github.com/wereturtle/ghostwriter"><img src=  "images/blacktocat.png" alt="GitHub" style="width: 16px; height: 16px"> View on GitHub  </a>
-        <a class="btn btn-success" href="http://github.com/wereturtle/ghostwriter/releases/latest">
-          <span class="glyphicon glyphicon-download" aria-hidden="true"></span>
-          Download for free!
-        </a></p>
+  
+      <div class="text-width margin-auto">
+        <p class="two-column tablet">
+          <a class="big block button base-color padding margin-bottom" href="http://github.com/wereturtle/ghostwriter"><img src=  "images/blacktocat.png" alt="GitHub" style="width: 16px; height: 16px"> View on GitHub  </a>
+          <a class="big block button success padding margin-bottom" href="http://github.com/wereturtle/ghostwriter/releases/latest">
+            <span class="glyphicon glyphicon-download" aria-hidden="true"></span> Download for free!
+          </a>
+        </p>
       </div>
-
+  
       <div class="text-center">
-        <a class="btn btn-default" href="quickrefguide.html">
+        <a class="" href="quickrefguide.html">
           <span class="glyphicon glyphicon-book" aria-hidden="true"></span>
-          Read the docs!
+          Read the docs
         </a></p>
       </div>
-
-    <!-- START THE FEATURETTES -->
-
-        <hr class="featurette-divider">
-
-        <div class="row featurette">
-          <div class="col-md-7">
-            <h2 class="featurette-heading">Distraction-Free Writing</h2>
-            <p class="lead">Enjoy a distraction-free writing experience, including a full screen mode and a clean interface.  With Markdown, you can write now, and format later.</p>
-          </div>
-          <div class="col-md-5">
-            <img data-holder-rendered="true" src="images/mockup.png" class="featurette-image img-responsive center-block" />
-          </div>
-        </div>
-
-        <hr class="featurette-divider">
-
-        <div class="row featurette">
-          <div class="col-md-7 col-md-push-5">
-            <h2 class="featurette-heading">Built-in Themes</h2>
-            <p class="lead">The built-in light and dark themes provide an aesthetic writing experience out of the box.</p>
-          </div>
-          <div class="col-md-5 col-md-pull-7">
-            <a href="images/dark-theme.png">
-              <img data-holder-rendered="true" src="images/dark-theme-thumnail.png" class="featurette-image img-responsive center-block" />
-            </a>
-          </div>
-        </div>
-
-        <hr class="featurette-divider">
-
-        <div class="row featurette">
-          <div class="col-md-7">
-            <h2 class="featurette-heading">Live HTML Preview</h2>
-            <p class="lead">Preview your Markdown document in HTML.  With the live preview, you can copy the HTML to paste into your blog, or export to another format.  You can even set your own custom style sheet to see how your document will appear once it is posted on your website.</p>
-            <p class="lead">The live preview is optimized for large documents, so you can work carefree without worrying about the application freezing while you type.</p>
-          </div>
-          <div class="col-md-5">
-            <a href="images/html-preview.png">
-              <img data-holder-rendered="true" src="images/html-preview-thumbnail.png" class="featurette-image img-responsive center-block">
-            </a>
-          </div>
-        </div>
-
-        <hr class="featurette-divider">
-
-        <div class="row featurette">
-          <div class="col-md-7 col-md-push-5">
-            <h2 class="featurette-heading">Export to Multiple Formats</h2>
-            <p class="lead">Use the built-in processor, Sundown, to export to HTML.  Alternatively, install any of the following to export to multiple formats in your preferred Markdown flavor:</p>
-
-            <ul class="lead">
-              <li>Pandoc</li>
-              <li>MultiMarkdown</li>
-              <li>cmark</li>
-            </ul>
-
-            <p class="lead"><i>ghostwriter</i> will automatically detect their installation, allowing you to export to HTML, Word, ODT, PDF, and more!</p>
-          </div>
-          <div class="col-md-5 col-md-pull-7">
-            <a href="images/export.png">
-              <img data-holder-rendered="true" src="images/export-thumbnail.png" class="featurette-image img-responsive center-block" />
-            </a>
-          </div>
-        </div>
-
-        <hr class="featurette-divider">
-
-    <!-- /END THE FEATURETTES -->
-
-    </div> <!-- /container -->
-
-    <!-- Less important (but still awesome) features-->
-
-    <div class="container">
-      <div class="row">
-        <div class="col-lg-4">
-          <h2>Navigation</h2>
-          <p><i>ghostwriter</i> utilizes head-up displays (HUDs) to provide information and special actions.  The Outline HUD facilitates navigating large documents.  Simply click on a heading in the HUD to go to a different section of your document, including within the live preview.</p>
-          <p><img data-holder-rendered="true" src="images/outline-hud.png" class="featurette-image img-responsive center-block" /></p>
-        </div>
-        <div class="col-lg-4">
-          <h2>Focus Mode</h2>
-          <p>Clicking on the "Focus" button in the lower right corner of the editor will enable Focus Mode, which highlights only the current text around the cursor while fading the rest.  You can configure <i>ghostwriter</i> to highlight the current line, sentence, paragraph, or three lines.</p>
-          <p>
-            <a href="images/focusmode.png">
-              <img data-holder-rendered="true" src="images/focusmode-thumbnail.png" class="featurette-image img-responsive center-block" />
-            </a>
-          </p>
-       </div>
-        <div class="col-lg-4">
-          <h2>Hemingway Mode</h2>
-          <p>Clicking on the "Hemingway" button in the lower right corner of the editor will disable your backspace and delete keys, creating a typewriter experience.  This feature is especially useful if you want to avoid editing and force yourself to write.</p>
-          <p><img data-holder-rendered="true" src="images/hemingway.png" class="featurette-image img-responsive center-block" /></p>
-        </div>
-      </div>
-      <div class="row">
-        <div class="col-lg-4">
-          <h2>Custom Theme Creation</h2>
-          <p>If the two built-in themes are not enough, you can create your own!  With background image support, you can create the ambience you need for your writing.</p>
-          <p>
-            <a href="images/custom-theme.png">
-              <img data-holder-rendered="true" src="images/custom-theme-thumbnail.png" class="featurette-image img-responsive center-block" />
-            </a>
-          </p>
-        </div>
-        <div class="col-lg-4">
-          <h2>Document and Session Statistics</h2>
-          <p>In addition to displaying a live word count at the bottom of the window, <i>ghostwriter</i> displays even more live statistics in its Document Statistics and Session Statistics HUDs.</p>
-          <p><img data-holder-rendered="true" src="images/statistics.png" class="featurette-image img-responsive center-block" /></p>
-        </div>
-        <div class="col-lg-4">
-          <h2>Drag and Drop Images</h2>
-          <p>Easily create image URLs within your Markdown document by dragging and dropping an image from your file system into <i>ghostwriter</i>'s editor.</p>
-          <p>
-            <a href="images/drag-and-drop.png">
-              <img data-holder-rendered="true" src="images/drag-and-drop-thumbnail.png" class="featurette-image img-responsive center-block" />
-            </a>
-          </p>
-        </div>
-      </div>
-
-
-
-    <!-- START THE FEATURETTES -->
-
-    <hr class="featurette-divider">
-
-    <div class="row featurette">
-      <h2 class="featurette-heading">Free and Open Source</h2>
-      <p class="lead">Over the years, I have greatly benefited from free and open source software.  As such, I want to give something back to the community.  Enjoy!</p>
     </div>
 
-    <hr class="featurette-divider">
+  <!-- START THE FEATURETTES -->
 
-    <!-- /END THE FEATURETTES -->
+      <hr class="fade">
 
-    </div> <!-- /container -->
+      <div class="two-column golden tablet">
+        <div class="margin">
+          <h2 class="small">Distraction-free writing</h2>
+          <p>Enjoy a distraction-free writing experience, including a full screen mode and a clean interface.  With Markdown, you can write now, and format later.</p>
+        </div>
+        <div class="vertical-center">
+          <img data-holder-rendered="true" src="images/mockup.png" class="margin" />
+        </div>
+      </div>
 
-      <hr/>
+      <hr class="fade">
 
-      <!-- FOOTER -->
-      <footer>
-        <p class="pull-right"><a href="#">Back to top</a></p>
-        <p><img alt="GitHub" src="https://img.shields.io/github/license/wereturtle/ghostwriter"><br/>Copyright (c) 2015-2021 wereturtle</a></p>
-      </footer>
+      <div class="two-column golden tablet">
+        <div class="margin">
+          <h2 class="small">Built-in themes</h2>
+          <p>The built-in light and dark themes provide an aesthetic writing experience out of the box.</p>
+        </div>
+        <div class="vertical-center">
+          <a href="images/dark-theme.png" class="margin-auto bock">
+            <img data-holder-rendered="true" src="images/dark-theme-thumnail.png" class="margin-top margin-auto" />
+          </a>
+        </div>
+      </div>
 
-    </div><!-- /.container -->
+      <hr class="fade">
+
+      <div class="two-column golden tablet">
+        <div class="margin">
+          <h2 class="small">Live HTML preview</h2>
+          <p>Preview your Markdown document in HTML.  With the live preview, you can copy the HTML to paste into your blog, or export to another format.  You can even set your own custom style sheet to see how your document will appear once it is posted on your website.</p>
+          <p>The live preview is optimized for large documents, so you can work carefree without worrying about the application freezing while you type.</p>
+        </div>
+        <div class="vertical-center text-center">
+          <a href="images/html-preview.png">
+            <img data-holder-rendered="true" src="images/html-preview-thumbnail.png" class="margin-auto">
+          </a>
+        </div>
+      </div>
+
+      <hr class="fade">
+
+      <div class="two-column golden tablet">
+        <div class="margin">
+          <h2 class="small">Export to multiple formats</h2>
+          <p>Use the built-in processor, Sundown, to export to HTML.  Alternatively, install any of the following to export to multiple formats in your preferred Markdown flavor:</p>
+
+          <ul class="margin-bottom">
+            <li>Pandoc</li>
+            <li>MultiMarkdown</li>
+            <li>cmark</li>
+          </ul>
+
+          <p><i>ghostwriter</i> will automatically detect their installation, allowing you to export to HTML, Word, ODT, PDF, and more!</p>
+        </div>
+        <div class="vertical-center text-center">
+          <a href="images/export.png">
+            <img data-holder-rendered="true" src="images/export-thumbnail.png" class="margin margin-auto" />
+          </a>
+        </div>
+      </div>
+
+      <hr class="fade">
+
+  <!-- /END THE FEATURETTES -->
+
+  </div> <!-- /container -->
+
+  <!-- Less important (but still awesome) features-->
+
+  <div class="three-column desktop gap-gutter small gutter-top">
+    <div class="inner-text-width">
+      <h3 class="gray text-color">Navigation</h3>
+      <p class="vertical-center text-center"><img data-holder-rendered="true" src="images/outline-hud.png" class="" /></p>
+      <p><i>ghostwriter</i> utilizes head-up displays (HUDs) to provide information and special actions.  The Outline HUD facilitates navigating large documents.  Simply click on a heading in the HUD to go to a different section of your document, including within the live preview.</p>
+    </div>
+    <div class="inner-text-width">
+      <h3 class="gray text-color">Focus mode</h3>
+      <p class="vertical-center text-center">
+        <a href="images/focusmode.png">
+          <img data-holder-rendered="true" src="images/focusmode-thumbnail.png" class="" />
+        </a>
+      </p>
+      <p>Clicking on the "Focus" button in the lower right corner of the editor will enable Focus Mode, which highlights only the current text around the cursor while fading the rest.  You can configure <i>ghostwriter</i> to highlight the current line, sentence, paragraph, or three lines.</p>
+      
+    </div>
+    <div class="inner-text-width">
+      <h3 class="gray text-color">Hemingway mode</h3>
+      <p class="vertical-center text-center"><img data-holder-rendered="true" src="images/hemingway.png" /></p>
+      <p>Clicking on the "Hemingway" button in the lower right corner of the editor will disable your backspace and delete keys, creating a typewriter experience.  This feature is especially useful if you want to avoid editing and force yourself to write.</p>
+    </div>
+  </div>
+  <div class="three-column desktop gap-gutter small gutter-top margin-bottom">
+    <div class="inner-text-width">
+      <h3 class="text-color gray">Custom theme creation</h3>
+      <p>If the two built-in themes are not enough, you can create your own!  With background image support, you can create the ambience you need for your writing.</p>
+      <p class="vertical-center text-center">
+        <a href="images/custom-theme.png">
+          <img data-holder-rendered="true" src="images/custom-theme-thumbnail.png" />
+        </a>
+      </p>
+    </div>
+    <div class="inner-text-width">
+      <h3 class="text-color gray">Document and session statistics</h3>
+      <p>In addition to displaying a live word count at the bottom of the window, <i>ghostwriter</i> displays even more live statistics in its Document Statistics and Session Statistics HUDs.</p>
+      <p class="text-center"><img data-holder-rendered="true" src="images/statistics.png" /></p>
+    </div>
+    <div class="inner-text-width">
+      <h3 class="text-color gray">Drag-and-drop images</h3>
+      <p>Easily create image URLs within your Markdown document by dragging and dropping an image from your file system into <i>ghostwriter</i>'s editor.</p>
+      <p class="text-center">
+        <a href="images/drag-and-drop.png">
+          <img data-holder-rendered="true" src="images/drag-and-drop-thumbnail.png" />
+        </a>
+      </p>
+    </div>
+  </div>
 
 
-    <!-- Bootstrap core JavaScript
-    ================================================== -->
-    <!-- Placed at the end of the document so the pages load faster -->
-    <script src="js/jquery-2.1.4.min.js"></script>
-    <script src="bootstrap/js/bootstrap.min.js"></script>
-    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
-    <script src="bootstrap/js/ie10-viewport-bug-workaround.js"></script>
-  
+
+  <!-- START THE FEATURETTES -->
+
+  <hr class="fade">
+
+  <div class="text-width margin-auto inner-gutter">
+    <h2>Free and Open Source</h2>
+    <p>Over the years, I have greatly benefited from free and open source software.  As such, I want to give something back to the community.  Enjoy!</p>
+  </div>
+
+  <hr class="fade">
+
+  <!-- /END THE FEATURETTES -->
+
+  </div> <!-- /container -->
+
+    <!-- FOOTER -->
+    <footer class="padding" >
+      <p class="float-right"><a href="#">Back to top</a></p>
+      <p class="dark gray text-color"><img alt="GitHub" src="https://img.shields.io/github/license/wereturtle/ghostwriter"><br/>Copyright &copy; 2015-2021 wereturtle</a></p>
+    </footer>
 
 </body></html>
